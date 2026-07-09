@@ -1,0 +1,15 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 1454.88 1166.67" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Logo BG" clip-path="url(#clip0_0_110)">
+<path id="Vector" d="M893.024 420.929C962.774 327.588 944.154 195.872 851.435 126.735C758.716 57.5972 627.009 77.2184 557.259 170.56L126.294 747.288C56.5437 840.629 75.1634 972.345 167.882 1041.48C260.601 1110.62 392.308 1091 462.059 997.657L893.024 420.929Z" fill="url(#paint0_linear_0_110)" fill-opacity="0.1"/>
+<path id="Vector_2" d="M992.825 996.107C1062.58 1089.45 1194.28 1109.07 1287 1039.93C1379.72 970.795 1398.34 839.079 1328.59 745.738L897.625 169.01C827.874 75.6683 696.167 56.0473 603.448 125.185C510.729 194.322 492.11 326.038 561.86 419.379L992.825 996.107Z" fill="var(--fill-0, white)" fill-opacity="0.03"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_110" x1="851.435" y1="126.735" x2="168.817" y2="1042.18" gradientUnits="userSpaceOnUse">
+<stop stop-color="white"/>
+<stop offset="1" stop-color="#333333"/>
+</linearGradient>
+<clipPath id="clip0_0_110">
+<rect width="1454.88" height="1166.67" fill="white"/>
+</clipPath>
+</defs>
+</svg>
