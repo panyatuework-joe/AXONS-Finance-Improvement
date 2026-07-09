@@ -217,9 +217,9 @@ function AppShellRouter() {
           <GlWriteoffDetailPage
             entry={entry}
             onBack={() => setView({ name: 'gl-writeoff-create' })}
-            onDelete={() => {
-              setGlWriteoffEntries((prev) => prev.filter((r) => r.id !== entry.id));
-              persist(() => glWriteoffApi.remove(entry.id));
+            onStatusChange={(updated) => {
+              setGlWriteoffEntries((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+              persist(() => glWriteoffApi.update(updated));
             }}
           />
         );

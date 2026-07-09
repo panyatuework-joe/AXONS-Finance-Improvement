@@ -9,6 +9,8 @@ import {
   DialogCancelIcon,
   DialogSaveIcon,
   DialogAddIcon,
+  DialogPauseIcon,
+  DialogCancelDangerIcon,
 } from '../icons';
 
 const ICONS = {
@@ -19,9 +21,11 @@ const ICONS = {
   cancel: DialogCancelIcon,
   save: DialogSaveIcon,
   add: DialogAddIcon,
+  pause: DialogPauseIcon,
+  'cancel-danger': DialogCancelDangerIcon,
 };
 
-export default function Dialog({ open, variant, title, message, onClose, actions, autoCloseMs }) {
+export default function Dialog({ open, variant, title, message, onClose, actions, autoCloseMs, children }) {
   const { tv } = useApp();
   const [countdown, setCountdown] = useState(Math.ceil((autoCloseMs ?? 3000) / 1000));
 
@@ -58,6 +62,7 @@ export default function Dialog({ open, variant, title, message, onClose, actions
         ) : (
           message && <p className="dialog-message">{message}</p>
         )}
+        {children}
         {actions && actions.length > 0 && (
           <div className={`dialog-actions${actions.length === 1 ? ' dialog-actions--single' : ''}`}>
             {actions.map((a, i) => (

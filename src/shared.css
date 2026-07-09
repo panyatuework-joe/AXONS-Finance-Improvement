@@ -1619,6 +1619,36 @@ th.ft-table-action-col {
   margin-top: 8px;
 }
 
+.dialog-reason {
+  width: 100%;
+  text-align: left;
+  margin-top: 16px;
+}
+
+.dialog-reason-label {
+  display: block;
+  font-size: 16px;
+  color: #344054;
+  margin-bottom: 4px;
+}
+
+.dialog-reason-input {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px 12px;
+  border: 1px solid #a6b0bf;
+  border-radius: 8px;
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 16px;
+  color: #344054;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.dialog-reason-input::placeholder {
+  color: #8a95a8;
+}
+
 .dialog-actions {
   display: flex;
   gap: 12px;
@@ -2851,6 +2881,16 @@ th.ft-table-action-col {
   white-space: nowrap;
 }
 
+.glw-amount-disabled {
+  color: #a6b0bf;
+}
+
+.glw-add-line-btn {
+  padding: 6px 12px;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
 /* ===== GL WRITE-OFF DETAIL VIEW (glwd-) ===== */
 .glwd-title-line {
   display: flex;
@@ -2932,21 +2972,29 @@ th.ft-table-action-col {
 }
 
 .glwd-file-list {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-bottom: 8px;
+  width: 100%;
 }
 
 .glwd-file-card {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 302px;
   padding: 8px;
   border: 1px solid #e4e7ec;
   border-radius: 8px;
   background: #ffffff;
+}
+
+.glwd-file-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .glwd-file-name {
@@ -2956,6 +3004,54 @@ th.ft-table-action-col {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.glwd-file-size {
+  font-size: 14px;
+  line-height: 16px;
+  color: #667085;
+}
+
+.glwd-file-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.glwd-file-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.glwd-file-action-btn--outline {
+  border: 1px solid #074e9f;
+  background: #ffffff;
+}
+
+.glwd-file-action-btn--outline:hover {
+  background: #f5fafe;
+}
+
+.glwd-file-action-btn--filled {
+  border: none;
+  background: #074e9f;
+}
+
+.glwd-file-action-btn--filled:hover {
+  background: #063e7f;
+}
+
+@media (max-width: 900px) {
+  .glwd-file-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 .glwd-summary-row {

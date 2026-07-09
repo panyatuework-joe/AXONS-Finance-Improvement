@@ -15,7 +15,7 @@ import Combobox from '../components/Combobox';
 import Dialog from '../components/Dialog';
 import EmptyState from '../components/EmptyState';
 import { buildGlWriteoffSchedule, formatWholeAmount, glWriteoffPerPeriodAmount } from '../utils';
-import { ChevronBreadcrumbIcon, CloseIcon } from '../icons';
+import { ChevronBreadcrumbIcon, CloseIcon, PlusIcon } from '../icons';
 
 function formatMoney(n) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -82,7 +82,8 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
   const linesValid = (lines) =>
     lines.length > 0 && lines.every((l) => l.dept && l.accountCode && l.cvCode && l.amount > 0);
 
-  const formValid =
+  // ต้องกรอก "ข้อมูลการตัดบัญชี" ให้ครบก่อน ถึงจะแสดง "ข้อมูลบัญชี" และ "รายละเอียดการตัดบัญชีรายงวด"
+  const accountInfoValid =
     !!dept &&
     !!docType &&
     !!docNo &&
@@ -90,9 +91,9 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
     description.trim().length > 0 &&
     totalNum > 0 &&
     installmentsNum > 0 &&
-    !!startPeriod &&
-    linesValid(debitLines) &&
-    linesValid(creditLines);
+    !!startPeriod;
+
+  const formValid = accountInfoValid && linesValid(debitLines) && linesValid(creditLines);
 
   function markDirty() {
     setDirty(true);
@@ -109,6 +110,12 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
     const update = (lines) => lines.map((l) => (l.id === id ? { ...l, ...patch } : l));
     if (kind === 'debit') setDebitLines(update);
     else setCreditLines(update);
+    markDirty();
+  }
+
+  function addLinePair() {
+    setDebitLines((prev) => [...prev, { ...newLine(GL_ACCOUNT_CODE_OPTIONS[0]), amount: perPeriodAmount }]);
+    setCreditLines((prev) => [...prev, { ...newLine(GL_ACCOUNT_CODE_OPTIONS[1]), amount: perPeriodAmount }]);
     markDirty();
   }
 
@@ -157,22 +164,23 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
     else onCancel();
   }
 
-  function renderLineTable(kind) {
-    const lines = kind === 'debit' ? debitLines : creditLines;
-    const total = kind === 'debit' ? debitTotal : creditTotal;
+  function renderAccountTable() {
+    const rows = [
+      ...debitLines.map((l) => ({ ...l, side: 'debit' })),
+      ...creditLines.map((l) => ({ ...l, side: 'credit' })),
+    ];
     return (
       <div className="glw-line-table-wrapper">
         <table className="glw-line-table">
           <colgroup>
-            <col style={{ width: '48px' }} />
             <col style={{ width: '220px' }} />
             <col style={{ width: '180px' }} />
-            <col style={{ width: '260px' }} />
-            <col style={{ width: '200px' }} />
+            <col />
+            <col style={{ width: '160px' }} />
+            <col style={{ width: '160px' }} />
           </colgroup>
           <thead>
             <tr>
-              <th></th>
               <th>
                 {t('ฝ่าย (UL)')} <span className="aft-required">*</span>
               </th>
@@ -182,17 +190,17 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
               <th>
                 {t('รหัส CV')} <span className="aft-required">*</span>
               </th>
-              <th className="glw-col-amount">{t('จำนวนเงิน')}</th>
+              <th className="glw-col-amount">{t('เดบิต (THB)')}</th>
+              <th className="glw-col-amount">{t('เครดิต (THB)')}</th>
             </tr>
           </thead>
           <tbody>
-            {lines.map((line, i) => (
+            {rows.map((line) => (
               <tr key={line.id}>
-                <td>{i + 1}</td>
                 <td>
                   <Combobox
                     value={line.dept}
-                    onChange={(v) => updateLine(kind, line.id, { dept: v })}
+                    onChange={(v) => updateLine(line.side, line.id, { dept: v })}
                     options={UL_DEPT_OPTIONS.map((d) => ({ value: d, label: t(d) }))}
                     placeholder={t('กรุณาเลือก')}
                   />
@@ -200,7 +208,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                 <td>
                   <Combobox
                     value={line.accountCode}
-                    onChange={(v) => updateLine(kind, line.id, { accountCode: v })}
+                    onChange={(v) => updateLine(line.side, line.id, { accountCode: v })}
                     options={GL_ACCOUNT_CODE_OPTIONS.map((a) => ({ value: a, label: t(a) }))}
                     placeholder={t('กรุณาเลือก')}
                   />
@@ -208,20 +216,34 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                 <td>
                   <Combobox
                     value={line.cvCode}
-                    onChange={(v) => updateLine(kind, line.id, { cvCode: v })}
+                    onChange={(v) => updateLine(line.side, line.id, { cvCode: v })}
                     options={CV_OPTIONS.map((c) => ({ value: c, label: t(c) }))}
                     placeholder={t('กรุณาเลือก')}
                     searchable
                   />
                 </td>
-                <td className="glw-col-amount">{formatWholeAmount(line.amount)} THB</td>
+                <td className="glw-col-amount">
+                  {line.side === 'debit' ? (
+                    `${formatWholeAmount(line.amount)} THB`
+                  ) : (
+                    <span className="glw-amount-disabled">0.00 THB</span>
+                  )}
+                </td>
+                <td className="glw-col-amount">
+                  {line.side === 'credit' ? (
+                    `${formatWholeAmount(line.amount)} THB`
+                  ) : (
+                    <span className="glw-amount-disabled">0.00 THB</span>
+                  )}
+                </td>
               </tr>
             ))}
             <tr className="glw-total-row">
-              <td colSpan={4} className="glw-total-label">
+              <td colSpan={3} className="glw-total-label">
                 {t('ยอดรวม')}
               </td>
-              <td className="glw-col-amount glw-total-amount">{formatWholeAmount(total)} THB</td>
+              <td className="glw-col-amount glw-total-amount">{formatWholeAmount(debitTotal)} THB</td>
+              <td className="glw-col-amount glw-total-amount">{formatWholeAmount(creditTotal)} THB</td>
             </tr>
           </tbody>
         </table>
@@ -452,75 +474,74 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
 
         <div className="aft-divider" />
 
-        <div className="glw-section-header">
-          <div>
-            <div className="aft-section-title" style={{ marginBottom: 0 }}>
-              {t('ข้อมูลบัญชีเดบิต')}
-            </div>
-            <div className="glw-section-subtitle">
-              {t('ระบบคำนวณยอดเดบิตและเครดิตเริ่มต้นจากยอดรวมทั้งสัญญา ออกมาเป็นยอดตัดบัญชีต่อเดือน')}
-            </div>
-          </div>
-        </div>
-        {renderLineTable('debit')}
-
-        <div className="glw-section-header">
-          <div>
-            <div className="aft-section-title" style={{ marginBottom: 0 }}>
-              {t('ข้อมูลบัญชีเครดิต')}
-            </div>
-            <div className="glw-section-subtitle">
-              {t('ระบบคำนวณยอดเดบิตและเครดิตเริ่มต้นจากยอดรวมทั้งสัญญา ออกมาเป็นยอดตัดบัญชีต่อเดือน')}
-            </div>
-          </div>
-        </div>
-        {renderLineTable('credit')}
-
-        <div className="glw-section-header">
-          <div>
-            <div className="aft-section-title" style={{ marginBottom: 0 }}>
-              {t('รายละเอียดการตัดบัญชีรายงวด')}
-            </div>
-            <div className="glw-section-subtitle">{t('ระบบคำนวณยอดตัดบัญชีต่อเดือนอัตโนมัติ')}</div>
-          </div>
-        </div>
-
-        {schedule.length === 0 ? (
-          <EmptyState title="ไม่มีข้อมูล" message="กรุณากรอกยอดเงินรวมทั้งสัญญา จำนวนงวด และงวดเริ่มต้น" />
+        {!accountInfoValid ? (
+          <>
+            <div className="aft-section-title">{t('ข้อมูลบัญชี')}</div>
+            <EmptyState title="ไม่มีข้อมูล" message="กรุณากรอกข้อมูลการตัดบัญชีให้ครบถ้วนก่อน" />
+          </>
         ) : (
-          <div className="glw-line-table-wrapper">
-            <table className="glw-line-table glw-schedule-table">
-              <colgroup>
-                <col style={{ width: '160px' }} />
-                <col />
-                <col style={{ width: '240px' }} />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>{t('งวดที่')}</th>
-                  <th>{t('เดือน')}</th>
-                  <th className="glw-col-amount">{t('จำนวนเงินต่องวด (THB)')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {schedule.map((row) => (
-                  <tr key={row.seq}>
-                    <td>
-                      {row.seq}/{schedule.length}
-                    </td>
-                    <td>{row.date}</td>
-                    <td className="glw-col-amount">{formatMoney(row.amount)} THB</td>
+          <>
+            <div className="glw-section-header">
+              <div>
+                <div className="aft-section-title" style={{ marginBottom: 0 }}>
+                  {t('ข้อมูลบัญชี')}
+                </div>
+                <div className="glw-section-subtitle">
+                  {t('ระบบคำนวณยอดเดบิตและเครดิตเริ่มต้นจากยอดรวมทั้งสัญญา ออกมาเป็นยอดตัดบัญชีต่อเดือน')}
+                </div>
+              </div>
+              <button type="button" className="ft-btn-outline glw-add-line-btn" onClick={addLinePair}>
+                <PlusIcon color="#074E9F" />
+                {t('เพิ่ม')}
+              </button>
+            </div>
+            {renderAccountTable()}
+
+            <div className="glw-section-header">
+              <div>
+                <div className="aft-section-title" style={{ marginBottom: 0 }}>
+                  {t('รายละเอียดการตัดบัญชีรายงวด')}
+                </div>
+                <div className="glw-section-subtitle">
+                  {t('ระบบคำนวณยอดตัดบัญชีอัตโนมัติ')} {installmentsNum} {t('งวด หากคำนวณค่างวดแล้วพบว่ามีเศษทศนิยม ระบบจะปัดเศษไปรวมในงวดที่ 1')}
+                </div>
+              </div>
+            </div>
+
+            <div className="glw-line-table-wrapper">
+              <table className="glw-line-table glw-schedule-table">
+                <colgroup>
+                  <col style={{ width: '160px' }} />
+                  <col />
+                  <col style={{ width: '240px' }} />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>{t('งวดที่')}</th>
+                    <th>{t('เดือน')}</th>
+                    <th className="glw-col-amount">{t('จำนวนเงินต่องวด (THB)')}</th>
                   </tr>
-                ))}
-                <tr className="glw-total-row">
-                  <td className="glw-total-label" colSpan={2}>
-                    {t('ยอดรวม')}
-                  </td>
-                  <td className="glw-col-amount glw-total-amount">{formatMoney(totalNum)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {schedule.map((row) => (
+                    <tr key={row.seq}>
+                      <td>
+                        {row.seq}/{schedule.length}
+                      </td>
+                      <td>{row.date}</td>
+                      <td className="glw-col-amount">{formatMoney(row.amount)} THB</td>
+                    </tr>
+                  ))}
+                  <tr className="glw-total-row">
+                    <td className="glw-total-label" colSpan={2}>
+                      {t('ยอดรวม')}
+                    </td>
+                    <td className="glw-col-amount glw-total-amount">{formatMoney(totalNum)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         <div className="aft-actions">

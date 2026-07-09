@@ -277,6 +277,21 @@ export const DialogSaveIcon = () => (
   </svg>
 );
 
+export const DialogPauseIcon = () => (
+  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 26V21.3333C20 14.5333 25.3733 9 32 9C38.6267 9 44 14.5333 44 21.3333V26" stroke="#074E9F" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+    <rect x="13" y="26" width="38" height="29" rx="4" stroke="#074E9F" strokeWidth="3"/>
+    <path d="M27 38V43M37 38V43" stroke="#074E9F" strokeWidth="3" strokeLinecap="round"/>
+  </svg>
+);
+
+export const DialogCancelDangerIcon = () => (
+  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="32" cy="32" r="23" stroke="#D92D20" strokeWidth="3"/>
+    <path d="M40 24L24 40M24 24L40 40" stroke="#D92D20" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 export const CancelCircleIcon = ({ color = '#D92D20' }) => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
     <circle cx="10" cy="10" r="7.5" stroke={color} strokeWidth="1.5"/>
@@ -287,6 +302,28 @@ export const CancelCircleIcon = ({ color = '#D92D20' }) => (
 export const FileDocIcon = ({ size = 48 }) => (
   <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M12.5 4C10.019 4 8 6.019 8 8.5V39.5C8 41.981 10.019 44 12.5 44H35.5C37.981 44 40 41.981 40 39.5V20H28.5C26.019 20 24 17.981 24 15.5V4H12.5ZM27 4.87891V15.5C27 16.327 27.673 17 28.5 17H39.1211L27 4.87891Z" fill="#074E9F"/>
+  </svg>
+);
+
+export const PauseCircleIcon = ({ color = '#074E9F' }) => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="10" cy="10" r="7.5" stroke={color} strokeWidth="1.5"/>
+    <path d="M8.33333 7.5V12.5M11.6667 7.5V12.5" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+export const PreviewFileIcon = ({ color = '#074E9F' }) => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M1.3335 8C1.3335 8 3.3335 3.33333 8.00016 3.33333C12.6668 3.33333 14.6668 8 14.6668 8C14.6668 8 12.6668 12.6667 8.00016 12.6667C3.3335 12.6667 1.3335 8 1.3335 8Z" stroke={color} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle cx="8" cy="8" r="2" stroke={color} strokeWidth="1.3"/>
+  </svg>
+);
+
+export const DownloadSmallIcon = ({ color = '#ffffff' }) => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2.6665 11.3333V12.6667C2.6665 13.0203 2.80698 13.3594 3.05703 13.6095C3.30708 13.8595 3.6462 14 3.99984 14H11.9998C12.3535 14 12.6926 13.8595 12.9426 13.6095C13.1927 13.3594 13.3332 13.0203 13.3332 12.6667V11.3333" stroke={color} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M4.6665 7.33334L7.99984 10.6667L11.3332 7.33334" stroke={color} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M8 10.6667V2" stroke={color} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 

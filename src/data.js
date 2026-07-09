@@ -235,7 +235,7 @@ export function seedGlWriteoffEntries() {
       creditLines: [
         { id: `glw-${i + 1}-c1`, dept: UL_DEPT_OPTIONS[3], accountCode: GL_ACCOUNT_CODE_OPTIONS[1], cvCode: CV_OPTIONS[1], amount: monthly },
       ],
-      files: [],
+      files: i === 0 ? ['CPALL130921.pdf', 'CPALL130921.pdf', 'CPALL130921.pdf'] : [],
     };
   });
 }
