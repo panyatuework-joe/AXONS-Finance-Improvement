@@ -11,6 +11,8 @@ import {
   DialogAddIcon,
   DialogPauseIcon,
   DialogCancelDangerIcon,
+  DialogImportIcon,
+  DialogProcessIcon,
 } from '../icons';
 
 const ICONS = {
@@ -23,6 +25,8 @@ const ICONS = {
   add: DialogAddIcon,
   pause: DialogPauseIcon,
   'cancel-danger': DialogCancelDangerIcon,
+  import: DialogImportIcon,
+  process: DialogProcessIcon,
 };
 
 export default function Dialog({ open, variant, title, message, onClose, actions, autoCloseMs, children }) {
@@ -57,10 +61,9 @@ export default function Dialog({ open, variant, title, message, onClose, actions
           <Icon />
         </div>
         <h3 className="dialog-title">{title}</h3>
-        {autoCloseMs ? (
+        {message && <p className="dialog-message">{message}</p>}
+        {autoCloseMs && (
           <p className="dialog-countdown">{tv('ระบบจะปิดหน้าต่างภายใน ({n}) ..', { n: countdown })}</p>
-        ) : (
-          message && <p className="dialog-message">{message}</p>
         )}
         {children}
         {actions && actions.length > 0 && (

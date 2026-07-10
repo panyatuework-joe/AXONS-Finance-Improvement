@@ -13,13 +13,15 @@ import FinancialTargetFormPage from './pages/FinancialTargetFormPage';
 import FinancialTargetViewPage from './pages/FinancialTargetViewPage';
 import ReconciliationPage from './pages/ReconciliationPage';
 import ReconciliationDetailPage from './pages/ReconciliationDetailPage';
-import GlWriteoffPage from './pages/GlWriteoffPage';
+import GlWriteoffMonthlyPage from './pages/GlWriteoffMonthlyPage';
 import GlWriteoffListPage from './pages/GlWriteoffListPage';
+import GlWriteoffImportPage from './pages/GlWriteoffImportPage';
 import GlWriteoffFormPage from './pages/GlWriteoffFormPage';
 import GlWriteoffDetailPage from './pages/GlWriteoffDetailPage';
 import PurchaseTaxInvoicePage from './pages/PurchaseTaxInvoicePage';
 import { SpinnerIcon } from './icons';
 import { MODULE_CONFIGS } from './data';
+import { nextGlWriteoffCode } from './utils';
 import {
   MODULE_KEYS,
   accountGroupApi,
@@ -43,6 +45,7 @@ function sidebarKeyForView(view) {
     case 'gl-writeoff-create':
     case 'gl-writeoff-form':
     case 'gl-writeoff-detail':
+    case 'gl-writeoff-import':
       return 'gl-writeoff-create';
     case 'gl-writeoff-list':
       return 'gl-writeoff-list';
@@ -190,6 +193,14 @@ function AppShellRouter() {
             data={glWriteoffEntries}
             onCreate={() => setView({ name: 'gl-writeoff-form' })}
             onView={(id) => setView({ name: 'gl-writeoff-detail', id })}
+            onImportClick={() => setView({ name: 'gl-writeoff-import' })}
+          />
+        );
+      case 'gl-writeoff-import':
+        return (
+          <GlWriteoffImportPage
+            existing={glWriteoffEntries}
+            onCancel={() => setView({ name: 'gl-writeoff-create' })}
             onImport={(entries) => {
               setGlWriteoffEntries((prev) => {
                 const next = [...entries, ...prev];
@@ -221,11 +232,49 @@ function AppShellRouter() {
               setGlWriteoffEntries((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
               persist(() => glWriteoffApi.update(updated));
             }}
+            onDuplicate={(source) => {
+              const duplicate = {
+                ...source,
+                id: `glw-${Date.now()}`,
+                code: nextGlWriteoffCode(glWriteoffEntries),
+                status: 'ระหว่างดำเนินการ',
+                statusReason: '',
+                installmentsPaid: 0,
+                createdBy: 'สิริศักดิ์ หงษ์พัตรา',
+                createdAt: new Date().toLocaleDateString('en-GB'),
+              };
+              setGlWriteoffEntries((prev) => [duplicate, ...prev]);
+              persist(() => glWriteoffApi.create(duplicate));
+              pushToastRef.current(t('คัดลอกรายการตัดบัญชีสำเร็จ'), 'success');
+              setView({ name: 'gl-writeoff-create' });
+            }}
           />
         );
       }
       case 'gl-writeoff-list':
-        return <GlWriteoffPage title="รายการตัดบัญชี" />;
+        return (
+          <GlWriteoffMonthlyPage
+            data={glWriteoffEntries}
+            onView={(id) => setView({ name: 'gl-writeoff-detail', id })}
+            onProcessBatch={(rows) => {
+              const ids = new Set(rows.map((r) => r.id));
+              setGlWriteoffEntries((prev) =>
+                prev.map((r) =>
+                  ids.has(r.id)
+                    ? { ...r, installmentsPaid: Math.min(r.installments, r.installmentsPaid + 1) }
+                    : r,
+                ),
+              );
+              persist(() =>
+                glWriteoffApi.replace(
+                  glWriteoffEntries.map((r) =>
+                    ids.has(r.id) ? { ...r, installmentsPaid: Math.min(r.installments, r.installmentsPaid + 1) } : r,
+                  ),
+                ),
+              );
+            }}
+          />
+        );
       case 'purchase-tax-invoice':
         return (
           <PurchaseTaxInvoicePage

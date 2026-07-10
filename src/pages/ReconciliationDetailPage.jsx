@@ -3,7 +3,15 @@ import { formatThaiTimestamp } from '../utils';
 import { useApp } from '../context/AppContext';
 import Pagination from '../components/Pagination';
 import ReconStatusBadge from '../components/ReconStatusBadge';
-import { ChevronBreadcrumbIcon, DownloadIcon, DocCheckIcon, SpinnerIcon, SortIcon } from '../icons';
+import {
+  ChevronBreadcrumbIcon,
+  DownloadIcon,
+  DocCheckIcon,
+  SpinnerIcon,
+  SortAIcon,
+  SortBOutlineIcon,
+  SortBSolidIcon,
+} from '../icons';
 
 const PAGE_SIZE = 10;
 const DETAIL_ROW_COUNT = 33;
@@ -108,12 +116,20 @@ export default function ReconciliationDetailPage({ item, onChange, onBack }) {
   const pageRows = sortedRows.slice((pageClamped - 1) * PAGE_SIZE, pageClamped * PAGE_SIZE);
 
   function handleSort(key) {
-    if (sortKey === key) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
+    if (sortKey !== key) {
       setSortKey(key);
       setSortDir('asc');
+    } else if (sortDir === 'asc') {
+      setSortDir('desc');
+    } else {
+      setSortKey(null);
+      setSortDir('asc');
     }
+  }
+
+  function renderSortIcon(key) {
+    if (sortKey !== key) return <SortAIcon />;
+    return sortDir === 'asc' ? <SortBOutlineIcon /> : <SortBSolidIcon />;
   }
 
   function exportCsv(rows, filename) {
@@ -251,7 +267,7 @@ export default function ReconciliationDetailPage({ item, onChange, onBack }) {
                   <th key={col.key} onClick={() => handleSort(col.key)}>
                     <span className="sort-th-inner">
                       {t(col.label)}
-                      <SortIcon />
+                      {renderSortIcon(col.key)}
                     </span>
                   </th>
                 ))}

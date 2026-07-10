@@ -6,17 +6,21 @@ import { buildGlWriteoffSchedule, formatWholeAmount, glWriteoffPerPeriodAmount }
 import {
   CancelCircleIcon,
   ChevronBreadcrumbIcon,
+  CopyDuplicateIcon,
   DownloadSmallIcon,
+  ErrorCircleSolidIcon,
   FileDocIcon,
   PauseCircleIcon,
   PreviewFileIcon,
+  ResumeIcon,
+  WarningCircleSolidIcon,
 } from '../icons';
 
 function formatMoney(n) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-export default function GlWriteoffDetailPage({ entry, onBack, onStatusChange }) {
+export default function GlWriteoffDetailPage({ entry, onBack, onStatusChange, onDuplicate }) {
   const { t } = useApp();
   const [pauseConfirmOpen, setPauseConfirmOpen] = useState(false);
   const [pauseSuccessOpen, setPauseSuccessOpen] = useState(false);
@@ -40,7 +44,7 @@ export default function GlWriteoffDetailPage({ entry, onBack, onStatusChange }) 
 
   function handleConfirmPause() {
     setPauseConfirmOpen(false);
-    onStatusChange({ ...entry, status: 'หยุดชั่วคราว' });
+    onStatusChange({ ...entry, status: 'หยุดชั่วคราว', statusReason: pauseReason });
     setPauseSuccessOpen(true);
   }
 
@@ -51,13 +55,21 @@ export default function GlWriteoffDetailPage({ entry, onBack, onStatusChange }) 
 
   function handleConfirmCancel() {
     setCancelConfirmOpen(false);
-    onStatusChange({ ...entry, status: 'ยกเลิก' });
+    onStatusChange({ ...entry, status: 'ยกเลิก', statusReason: cancelReason });
     setCancelSuccessOpen(true);
   }
 
   function handleCancelSuccessClose() {
     setCancelSuccessOpen(false);
     setCancelReason('');
+  }
+
+  function handleResume() {
+    onStatusChange({ ...entry, status: 'ระหว่างดำเนินการ', statusReason: '' });
+  }
+
+  function handleDuplicate() {
+    onDuplicate(entry);
   }
 
   const accountRows = useMemo(
@@ -89,17 +101,67 @@ export default function GlWriteoffDetailPage({ entry, onBack, onStatusChange }) 
             </span>
           </div>
           <div className="view-header-actions">
-            <button className="ft-btn-outline" onClick={() => setPauseConfirmOpen(true)}>
-              <PauseCircleIcon />
-              {t('หยุดการตัดบัญชีชั่วคราว')}
-            </button>
-            <button className="ft-btn-outline-danger" onClick={() => setCancelConfirmOpen(true)}>
-              <CancelCircleIcon color="#D92D20" />
-              {t('ยกเลิกการตัดบัญชี')}
-            </button>
+            {entry.status === 'ยกเลิก' && (
+              <button className="ft-btn-outline" onClick={handleDuplicate}>
+                <CopyDuplicateIcon />
+                {t('คัดลอกรายการตัดบัญชี')}
+              </button>
+            )}
+            {entry.status === 'หยุดชั่วคราว' && (
+              <>
+                <button className="ft-btn-outline" onClick={handleDuplicate}>
+                  <CopyDuplicateIcon />
+                  {t('คัดลอกรายการตัดบัญชี')}
+                </button>
+                <button className="ft-btn-primary" onClick={handleResume}>
+                  <ResumeIcon />
+                  {t('ดำเนินการตัดบัญชีต่อ')}
+                </button>
+              </>
+            )}
+            {entry.status !== 'ยกเลิก' && entry.status !== 'หยุดชั่วคราว' && (
+              <>
+                <button className="ft-btn-outline" onClick={() => setPauseConfirmOpen(true)}>
+                  <PauseCircleIcon />
+                  {t('หยุดการตัดบัญชีชั่วคราว')}
+                </button>
+                <button className="ft-btn-outline-danger" onClick={() => setCancelConfirmOpen(true)}>
+                  <CancelCircleIcon color="#D92D20" />
+                  {t('ยกเลิกการตัดบัญชี')}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
+
+      {entry.status === 'ยกเลิก' && (
+        <div className="glwd-status-banner glwd-status-banner--cancelled">
+          <ErrorCircleSolidIcon />
+          <div className="glwd-status-banner-text">
+            <span className="glwd-status-banner-title">{t('รายการตัดบัญชีนี้ถูกยกเลิกแล้ว')}</span>
+            {entry.statusReason && (
+              <span className="glwd-status-banner-message">
+                {t('เหตุผลการยกเลิก')}: {entry.statusReason}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {entry.status === 'หยุดชั่วคราว' && (
+        <div className="glwd-status-banner glwd-status-banner--paused">
+          <WarningCircleSolidIcon />
+          <div className="glwd-status-banner-text">
+            <span className="glwd-status-banner-title">{t('รายการตัดบัญชีนี้ถูกหยุดชั่วคราว')}</span>
+            {entry.statusReason && (
+              <span className="glwd-status-banner-message">
+                {t('เหตุผลการหยุด')}: {entry.statusReason}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="aft-card glwd-view">
         <div className="aft-section-title">{t('ข้อมูลการตัดบัญชี')}</div>
@@ -241,7 +303,11 @@ export default function GlWriteoffDetailPage({ entry, onBack, onStatusChange }) 
               {t('รายละเอียดการตัดบัญชีรายงวด')}
             </div>
             <div className="glw-section-subtitle">
-              {t('ระบบคำนวณยอดตัดบัญชีอัตโนมัติ')} {entry.installments} {t('งวด หากคำนวณค่างวดแล้วพบว่ามีเศษทศนิยม ระบบจะปัดเศษไปรวมในงวดที่ 1')}
+              {t('ระบบคำนวณยอดตัดบัญชีอัตโนมัติ')}{' '}
+              <span className="glw-subtitle-highlight">
+                {entry.installments} {t('งวด')}
+              </span>{' '}
+              {t('หากคำนวณค่างวดแล้วพบว่ามีเศษทศนิยม ระบบจะปัดเศษไปรวมในงวดที่ 1')}
             </div>
           </div>
         </div>

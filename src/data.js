@@ -163,17 +163,17 @@ export function seedModuleData() {
 
 export const GL_WRITEOFF_COMPANY = '6613 - บมจ.กรุงเทพโปรดิ๊วส';
 
-export const DOC_TYPE_OPTIONS = ['01 - ใบแจ้งหนี้', '02 - ใบเสร็จรับเงิน', '03 - ใบลดหนี้'];
+export const DOC_TYPE_OPTIONS = ['01 - ใบแจ้งหนี้', '02 - ใบกำกับภาษี', '03 - ใบเสร็จรับเงิน'];
 
 export const DOC_NO_OPTIONS = [
-  'DOC-00000000001',
-  'DOC-00000000002',
-  'DOC-00000000003',
-  'DOC-00000000004',
-  'DOC-00000000005',
+  'A21-1096-SN24-0002',
+  'A21-1096-SN24-0003',
+  'A21-1096-SN24-0004',
+  'A21-1096-SN24-0005',
+  'A21-1096-SN24-0006',
 ];
 
-export const WRITEOFF_CATEGORY_OPTIONS = ['จ่ายล่วงหน้า', 'รับล่วงหน้า'];
+export const WRITEOFF_CATEGORY_OPTIONS = ['จ่ายล่วงหน้า', 'รับล่วงหน้า', 'ค่าใช้จ่ายค้างจ่าย', 'รายได้ค้างรับ'];
 
 export const UL_DEPT_OPTIONS = [
   '101 - บริหารโรงงาน',

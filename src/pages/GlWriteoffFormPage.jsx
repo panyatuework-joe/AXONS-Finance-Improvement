@@ -15,7 +15,22 @@ import Combobox from '../components/Combobox';
 import Dialog from '../components/Dialog';
 import EmptyState from '../components/EmptyState';
 import { buildGlWriteoffSchedule, formatWholeAmount, glWriteoffPerPeriodAmount } from '../utils';
-import { ChevronBreadcrumbIcon, CloseIcon, PlusIcon } from '../icons';
+import {
+  ChevronBreadcrumbIcon,
+  CheckCircleSolidIcon,
+  CloseIcon,
+  DeleteIcon,
+  ErrorCircleSolidIcon,
+  FileDocIcon,
+  PlusIcon,
+  PreviewFileIcon,
+  RetryIcon,
+} from '../icons';
+
+const MAX_UPLOAD_SIZE_BYTES = 25 * 1024 * 1024;
+const ACCEPTED_UPLOAD_EXTENSIONS = ['pdf', 'xlsx', 'png', 'jpg', 'jpeg'];
+const UPLOAD_FAIL_RATE = 0.1;
+const UPLOAD_SETTLE_MS = 3000;
 
 function formatMoney(n) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -30,15 +45,32 @@ function sanitizeNumericInput(raw) {
   return cleaned;
 }
 
+function formatFileSize(bytes) {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+function fileExtension(name) {
+  const dot = name.lastIndexOf('.');
+  return dot === -1 ? '' : name.slice(dot + 1).toLowerCase();
+}
+
 let lineIdCounter = 0;
 function newLine(accountCode) {
   lineIdCounter += 1;
   return { id: `glw-line-${Date.now()}-${lineIdCounter}`, dept: '', accountCode, cvCode: '', amount: 0 };
 }
 
+let uploadIdCounter = 0;
+function nextUploadId() {
+  uploadIdCounter += 1;
+  return `glw-upload-${Date.now()}-${uploadIdCounter}`;
+}
+
 export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
-  const { t } = useApp();
+  const { t, tv } = useApp();
   const fileInputRef = useRef(null);
+  const uploadTimersRef = useRef({});
 
   const [dept, setDept] = useState('');
   const [docType, setDocType] = useState('');
@@ -93,17 +125,92 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
     installmentsNum > 0 &&
     !!startPeriod;
 
+  const hasUploadingFiles = files.some((f) => f.status === 'uploading');
   const formValid = accountInfoValid && linesValid(debitLines) && linesValid(creditLines);
+
+  useEffect(() => {
+    return () => {
+      Object.values(uploadTimersRef.current).forEach((t) => {
+        clearInterval(t.interval);
+        clearTimeout(t.timeout);
+      });
+    };
+  }, []);
 
   function markDirty() {
     setDirty(true);
   }
 
+  function clearUploadTimers(id) {
+    const timers = uploadTimersRef.current[id];
+    if (!timers) return;
+    clearInterval(timers.interval);
+    clearTimeout(timers.timeout);
+    delete uploadTimersRef.current[id];
+  }
+
+  function runUpload(id) {
+    const durationMs = 1200 + Math.random() * 800;
+    const startedAt = Date.now();
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startedAt;
+      const progress = Math.min(100, Math.round((elapsed / durationMs) * 100));
+      const secondsLeft = Math.max(0, Math.ceil((durationMs - elapsed) / 1000));
+      setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, progress, secondsLeft } : f)));
+      if (progress >= 100) {
+        clearInterval(interval);
+        const failed = Math.random() < UPLOAD_FAIL_RATE;
+        setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: failed ? 'error' : 'success' } : f)));
+        if (failed) {
+          clearUploadTimers(id);
+        } else {
+          const timeout = setTimeout(() => {
+            setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, settled: true } : f)));
+            clearUploadTimers(id);
+          }, UPLOAD_SETTLE_MS);
+          uploadTimersRef.current[id] = { ...uploadTimersRef.current[id], timeout };
+        }
+      }
+    }, 100);
+    uploadTimersRef.current[id] = { interval };
+  }
+
   function handleFilesSelected(list) {
     if (!list || list.length === 0) return;
-    setFiles((prev) => [...prev, ...Array.from(list).map((f) => f.name)]);
+    const incoming = Array.from(list).map((file) => {
+      const id = nextUploadId();
+      const sizeLabel = formatFileSize(file.size);
+      const ext = fileExtension(file.name);
+      if (!ACCEPTED_UPLOAD_EXTENSIONS.includes(ext)) {
+        return { id, name: file.name, sizeLabel, status: 'error-format', progress: 100 };
+      }
+      if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+        return { id, name: file.name, sizeLabel, status: 'error-size', progress: 100 };
+      }
+      return { id, name: file.name, sizeLabel, status: 'uploading', progress: 0, secondsLeft: 2 };
+    });
+    setFiles((prev) => [...prev, ...incoming]);
+    incoming.forEach((f) => {
+      if (f.status === 'uploading') runUpload(f.id);
+    });
     markDirty();
     if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  function cancelUpload(id) {
+    clearUploadTimers(id);
+    setFiles((prev) => prev.filter((f) => f.id !== id));
+  }
+
+  function retryUpload(id) {
+    clearUploadTimers(id);
+    setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status: 'uploading', progress: 0, secondsLeft: 2 } : f)));
+    runUpload(id);
+  }
+
+  function removeFile(id) {
+    clearUploadTimers(id);
+    setFiles((prev) => prev.filter((f) => f.id !== id));
   }
 
   function updateLine(kind, id, patch) {
@@ -144,7 +251,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
       status: 'ระหว่างดำเนินการ',
       debitLines,
       creditLines,
-      files,
+      files: files.filter((f) => f.status === 'success').map((f) => f.name),
     };
   }
 
@@ -173,6 +280,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
       <div className="glw-line-table-wrapper">
         <table className="glw-line-table">
           <colgroup>
+            <col style={{ width: '56px' }} />
             <col style={{ width: '220px' }} />
             <col style={{ width: '180px' }} />
             <col />
@@ -181,6 +289,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
           </colgroup>
           <thead>
             <tr>
+              <th></th>
               <th>
                 {t('ฝ่าย (UL)')} <span className="aft-required">*</span>
               </th>
@@ -195,8 +304,9 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((line) => (
+            {rows.map((line, i) => (
               <tr key={line.id}>
+                <td>{i + 1}</td>
                 <td>
                   <Combobox
                     value={line.dept}
@@ -224,22 +334,22 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                 </td>
                 <td className="glw-col-amount">
                   {line.side === 'debit' ? (
-                    `${formatWholeAmount(line.amount)} THB`
+                    <span className="glw-account-amount-box">{formatWholeAmount(line.amount)} THB</span>
                   ) : (
-                    <span className="glw-amount-disabled">0.00 THB</span>
+                    <span className="glw-account-amount-box glw-account-amount-box--disabled">0.00 THB</span>
                   )}
                 </td>
                 <td className="glw-col-amount">
                   {line.side === 'credit' ? (
-                    `${formatWholeAmount(line.amount)} THB`
+                    <span className="glw-account-amount-box">{formatWholeAmount(line.amount)} THB</span>
                   ) : (
-                    <span className="glw-amount-disabled">0.00 THB</span>
+                    <span className="glw-account-amount-box glw-account-amount-box--disabled">0.00 THB</span>
                   )}
                 </td>
               </tr>
             ))}
             <tr className="glw-total-row">
-              <td colSpan={3} className="glw-total-label">
+              <td colSpan={4} className="glw-total-label">
                 {t('ยอดรวม')}
               </td>
               <td className="glw-col-amount glw-total-amount">{formatWholeAmount(debitTotal)} THB</td>
@@ -251,12 +361,124 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
     );
   }
 
+  function renderUploadCard(file) {
+    if (file.status === 'success' && file.settled) {
+      return (
+        <div className="glwd-file-card" key={file.id}>
+          <FileDocIcon />
+          <div className="glwd-file-info">
+            <span className="glwd-file-name">{file.name}</span>
+            <span className="glwd-file-size">{file.sizeLabel}</span>
+          </div>
+          <div className="glwd-file-actions">
+            <button
+              type="button"
+              className="glwd-file-action-btn glwd-file-action-btn--danger"
+              title={t('ลบ')}
+              onClick={() => removeFile(file.id)}
+            >
+              <DeleteIcon color="#D92D20" size={16} />
+            </button>
+            <button type="button" className="glwd-file-action-btn glwd-file-action-btn--outline" title={t('ดูตัวอย่าง')}>
+              <PreviewFileIcon />
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    const isUploading = file.status === 'uploading';
+    const isSuccess = file.status === 'success';
+    const isFormatError = file.status === 'error-format';
+    const isSizeError = file.status === 'error-size';
+    const isGenericError = file.status === 'error';
+    const isError = isFormatError || isSizeError || isGenericError;
+
+    return (
+      <div className="glw-upload-card" key={file.id}>
+        <FileDocIcon color={isSuccess ? '#074E9F' : '#BDDBFC'} />
+        <div className="glw-upload-info">
+          <div className="glw-upload-name-row">
+            <span className="glw-upload-name">{file.name}</span>
+            {isSuccess && <CheckCircleSolidIcon />}
+            {isError && <ErrorCircleSolidIcon />}
+          </div>
+          <div className={`glw-upload-track${isError ? ' glw-upload-track--error' : ''}`}>
+            <div
+              className={`glw-upload-fill${isSuccess ? ' glw-upload-fill--success' : isError ? ' glw-upload-fill--error' : ''}`}
+              style={{ width: `${file.progress}%` }}
+            />
+          </div>
+          <div className="glw-upload-status-row">
+            <span className="glw-upload-status-time">
+              {isUploading && tv('{n} วินาที', { n: file.secondsLeft })}
+              {isSizeError && file.sizeLabel}
+            </span>
+            <span
+              className={`glw-upload-status-text glw-upload-status-text--${
+                isUploading ? 'uploading' : isSuccess ? 'success' : 'error'
+              }`}
+            >
+              {isUploading && t('กำลังอัปโหลด…')}
+              {isSuccess && t('สำเร็จ')}
+              {isGenericError && t('อัปโหลดไม่สำเร็จ')}
+              {isSizeError && t('ขนาดไฟล์เกินกำหนด')}
+              {isFormatError && t('รูปแบบไฟล์ไม่ถูกต้อง')}
+            </span>
+          </div>
+        </div>
+        <div className="glwd-file-actions">
+          {isUploading && (
+            <button
+              type="button"
+              className="glwd-file-action-btn glwd-file-action-btn--danger"
+              title={t('ยกเลิก')}
+              onClick={() => cancelUpload(file.id)}
+            >
+              <CloseIcon size={16} color="#D92D20" />
+            </button>
+          )}
+          {isSuccess && (
+            <button
+              type="button"
+              className="glwd-file-action-btn glwd-file-action-btn--danger"
+              title={t('ลบ')}
+              onClick={() => removeFile(file.id)}
+            >
+              <DeleteIcon color="#D92D20" size={16} />
+            </button>
+          )}
+          {isGenericError && (
+            <button
+              type="button"
+              className="glwd-file-action-btn glwd-file-action-btn--neutral"
+              title={t('ลองใหม่')}
+              onClick={() => retryUpload(file.id)}
+            >
+              <RetryIcon />
+            </button>
+          )}
+          {(isSizeError || isFormatError) && (
+            <button
+              type="button"
+              className="glwd-file-action-btn glwd-file-action-btn--danger"
+              title={t('ลบ')}
+              onClick={() => removeFile(file.id)}
+            >
+              <DeleteIcon color="#D92D20" size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="aft-page-header">
         <div className="aft-breadcrumb">
           <span className="aft-breadcrumb-link" onClick={handleBreadcrumbClick}>
-            {t('การตัดบัญชี GL')}
+            {t('จัดการรายการตัดบัญชี')}
           </span>
           <ChevronBreadcrumbIcon />
           <span className="aft-breadcrumb-current">{t('สร้างรายการตัดบัญชี')}</span>
@@ -409,6 +631,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                 type="text"
                 inputMode="numeric"
                 className="aft-input-amount"
+                style={{ textAlign: 'left' }}
                 value={installments}
                 placeholder={t('กรุณากรอก')}
                 onChange={(e) => {
@@ -456,20 +679,15 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
         </div>
         <div className="glw-file-hint">PDF, XLSX, PNG, JPG (MAX. 25MB)</div>
         {files.length > 0 && (
-          <div>
-            {files.map((name, i) => (
-              <span className="glw-file-chip" key={`${name}-${i}`}>
-                {name}
-                <button
-                  type="button"
-                  title={t('ลบ')}
-                  onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
-                >
-                  <CloseIcon size={14} />
-                </button>
+          <>
+            <div className="glwd-file-header">
+              <span className="glwd-file-header-text">
+                {t('ไฟล์เอกสารแนบ')} <span className="glwd-file-count">{files.length}</span> {t('รายการ')}
               </span>
-            ))}
-          </div>
+              <span className="glwd-file-header-divider" />
+            </div>
+            <div className="glwd-file-list">{files.map((f) => renderUploadCard(f))}</div>
+          </>
         )}
 
         <div className="aft-divider" />
@@ -503,7 +721,11 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                   {t('รายละเอียดการตัดบัญชีรายงวด')}
                 </div>
                 <div className="glw-section-subtitle">
-                  {t('ระบบคำนวณยอดตัดบัญชีอัตโนมัติ')} {installmentsNum} {t('งวด หากคำนวณค่างวดแล้วพบว่ามีเศษทศนิยม ระบบจะปัดเศษไปรวมในงวดที่ 1')}
+                  {t('ระบบคำนวณยอดตัดบัญชีอัตโนมัติ')}{' '}
+                  <span className="glw-subtitle-highlight">
+                    {installmentsNum} {t('งวด')}
+                  </span>{' '}
+                  {t('หากคำนวณค่างวดแล้วพบว่ามีเศษทศนิยม ระบบจะปัดเศษไปรวมในงวดที่ 1')}
                 </div>
               </div>
             </div>
@@ -548,7 +770,11 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
           <button className="ft-btn-outline" onClick={() => setConfirmCancelOpen(true)}>
             {t('ยกเลิก')}
           </button>
-          <button className="aft-btn-add" onClick={() => setConfirmSubmitOpen(true)} disabled={!formValid}>
+          <button
+            className="aft-btn-add"
+            onClick={() => setConfirmSubmitOpen(true)}
+            disabled={!formValid || hasUploadingFiles}
+          >
             {t('สร้าง')}
           </button>
         </div>
