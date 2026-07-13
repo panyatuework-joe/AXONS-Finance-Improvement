@@ -8,6 +8,8 @@
 export const PHRASES = {
   // Layout / navbar / sidebar
   'สลับภาษา': 'Switch language',
+  'สลับเป็นโหมดสว่าง': 'Switch to light mode',
+  'สลับเป็นโหมดมืด': 'Switch to dark mode',
   'หน้าแรก': 'Home',
   'บัญชีแยกประเภท': 'Ledger',
   'การตั้งค่า': 'Settings',

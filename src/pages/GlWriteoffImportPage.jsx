@@ -265,7 +265,7 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
               className="ft-btn-outline"
               onClick={() => pushToast(t('ฟีเจอร์นี้จะพร้อมใช้งานเร็ว ๆ นี้'), 'info')}
             >
-              <HistoryOutlineIcon color="#074E9F" />
+              <HistoryOutlineIcon color="var(--color-primary-default)" />
               {t('ประวัติการนำเข้าไฟล์')}
             </button>
           </div>
@@ -324,7 +324,7 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
               </div>
             </div>
             <div className="glw-import-spinner">
-              <SpinnerIcon size={48} color="#074e9f" />
+              <SpinnerIcon size={48} color="var(--color-primary-default)" />
               <span>{t('กำลังประมวลผลข้อมูล')}</span>
             </div>
           </div>
@@ -500,7 +500,7 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
               title={t('ลบ')}
               onClick={() => removeFile(file.id)}
             >
-              <DeleteIcon color="#D92D20" size={16} />
+              <DeleteIcon color="var(--color-error-default)" size={16} />
             </button>
             <button type="button" className="glwd-file-action-btn glwd-file-action-btn--outline" title={t('คัดลอก')}>
               <CopyDuplicateIcon />
@@ -512,7 +512,7 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
 
     return (
       <div className="glw-upload-card" key={file.id}>
-        <FileDocIcon color={isError ? '#BDDBFC' : '#BDDBFC'} />
+        <FileDocIcon color={isError ? 'var(--color-primary-container)' : 'var(--color-primary-container)'} />
         <div className="glw-upload-info">
           <div className="glw-upload-name-row">
             <span className="glw-upload-name">{file.name}</span>
@@ -545,7 +545,7 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
               title={t('ยกเลิก')}
               onClick={() => removeFile(file.id)}
             >
-              <CloseIcon size={16} color="#D92D20" />
+              <CloseIcon size={16} color="var(--color-error-default)" />
             </button>
           )}
           {isError && (
@@ -555,7 +555,7 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
               title={t('ลบ')}
               onClick={() => removeFile(file.id)}
             >
-              <DeleteIcon color="#D92D20" size={16} />
+              <DeleteIcon color="var(--color-error-default)" size={16} />
             </button>
           )}
         </div>

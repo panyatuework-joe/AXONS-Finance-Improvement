@@ -20,7 +20,7 @@ export default function Select({ value, onChange, options, placeholder, disabled
           </option>
         ))}
       </select>
-      <ChevronDownIcon size={20} color={disabled ? '#8a95a8' : '#344054'} />
+      <ChevronDownIcon size={20} color={disabled ? 'var(--color-neutral-default)' : 'var(--color-text-normal)'} />
     </div>
   );
 }

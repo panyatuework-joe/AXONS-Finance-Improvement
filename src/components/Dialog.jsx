@@ -55,7 +55,7 @@ export default function Dialog({ open, variant, title, message, onClose, actions
     <div className="dialog-backdrop" onClick={onClose}>
       <div className="dialog-card" onClick={(e) => e.stopPropagation()}>
         <button className="dialog-close" onClick={onClose}>
-          <CloseIcon size={18} color="#667085" />
+          <CloseIcon size={18} color="var(--color-text-light)" />
         </button>
         <div className="dialog-icon">
           <Icon />

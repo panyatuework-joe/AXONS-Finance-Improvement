@@ -182,7 +182,7 @@ export default function FinancialTargetPage({ data, onChange, onAdd, onView, onE
                 <span className="filter-chip" key={`dept-${v}`}>
                   {t(v)}
                   <button type="button" onClick={() => removeAppliedChip('dept', v)}>
-                    <CloseIcon size={12} color="#ffffff" />
+                    <CloseIcon size={12} color="var(--color-base-white)" />
                   </button>
                 </span>
               ))}
@@ -190,7 +190,7 @@ export default function FinancialTargetPage({ data, onChange, onAdd, onView, onE
                 <span className="filter-chip" key={`subdept-${v}`}>
                   {t(v)}
                   <button type="button" onClick={() => removeAppliedChip('subDept', v)}>
-                    <CloseIcon size={12} color="#ffffff" />
+                    <CloseIcon size={12} color="var(--color-base-white)" />
                   </button>
                 </span>
               ))}
@@ -198,7 +198,7 @@ export default function FinancialTargetPage({ data, onChange, onAdd, onView, onE
                 <span className="filter-chip" key={`acc-${v}`}>
                   {t(v)}
                   <button type="button" onClick={() => removeAppliedChip('accountCode', v)}>
-                    <CloseIcon size={12} color="#ffffff" />
+                    <CloseIcon size={12} color="var(--color-base-white)" />
                   </button>
                 </span>
               ))}

@@ -377,7 +377,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
               title={t('ลบ')}
               onClick={() => removeFile(file.id)}
             >
-              <DeleteIcon color="#D92D20" size={16} />
+              <DeleteIcon color="var(--color-error-default)" size={16} />
             </button>
             <button type="button" className="glwd-file-action-btn glwd-file-action-btn--outline" title={t('ดูตัวอย่าง')}>
               <PreviewFileIcon />
@@ -396,7 +396,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
 
     return (
       <div className="glw-upload-card" key={file.id}>
-        <FileDocIcon color={isSuccess ? '#074E9F' : '#BDDBFC'} />
+        <FileDocIcon color={isSuccess ? 'var(--color-primary-default)' : 'var(--color-primary-container)'} />
         <div className="glw-upload-info">
           <div className="glw-upload-name-row">
             <span className="glw-upload-name">{file.name}</span>
@@ -435,7 +435,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
               title={t('ยกเลิก')}
               onClick={() => cancelUpload(file.id)}
             >
-              <CloseIcon size={16} color="#D92D20" />
+              <CloseIcon size={16} color="var(--color-error-default)" />
             </button>
           )}
           {isSuccess && (
@@ -445,7 +445,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
               title={t('ลบ')}
               onClick={() => removeFile(file.id)}
             >
-              <DeleteIcon color="#D92D20" size={16} />
+              <DeleteIcon color="var(--color-error-default)" size={16} />
             </button>
           )}
           {isGenericError && (
@@ -465,7 +465,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
               title={t('ลบ')}
               onClick={() => removeFile(file.id)}
             >
-              <DeleteIcon color="#D92D20" size={16} />
+              <DeleteIcon color="var(--color-error-default)" size={16} />
             </button>
           )}
         </div>
@@ -709,7 +709,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                 </div>
               </div>
               <button type="button" className="ft-btn-outline glw-add-line-btn" onClick={addLinePair}>
-                <PlusIcon color="#074E9F" />
+                <PlusIcon color="var(--color-primary-default)" />
                 {t('เพิ่ม')}
               </button>
             </div>

@@ -126,7 +126,7 @@ export default function GlWriteoffDetailPage({ entry, onBack, onStatusChange, on
                   {t('หยุดการตัดบัญชีชั่วคราว')}
                 </button>
                 <button className="ft-btn-outline-danger" onClick={() => setCancelConfirmOpen(true)}>
-                  <CancelCircleIcon color="#D92D20" />
+                  <CancelCircleIcon color="var(--color-error-default)" />
                   {t('ยกเลิกการตัดบัญชี')}
                 </button>
               </>

@@ -742,11 +742,11 @@ export default function AccountGroupPage({ data, onChange }) {
               </button>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button className="ft-btn-outline-danger" onClick={() => setDeleteTarget(viewTarget)}>
-                  <DeleteIcon color="#D92D20" />
+                  <DeleteIcon color="var(--color-error-default)" />
                   {t('ลบ')}
                 </button>
                 <button className="ft-btn-outline" onClick={() => openEdit(viewTarget)}>
-                  <EditIcon color="#074E9F" />
+                  <EditIcon color="var(--color-primary-default)" />
                   {t('แก้ไข')}
                 </button>
               </div>

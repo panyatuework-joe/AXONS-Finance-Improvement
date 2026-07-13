@@ -246,7 +246,7 @@ export default function ReconciliationDetailPage({ item, onChange, onBack }) {
               {t('ดาวน์โหลดทั้งหมด')}
             </button>
             <button className="ft-btn-primary" onClick={handleRecheckAll} disabled={rechecking}>
-              {rechecking ? <SpinnerIcon size={18} color="#ffffff" /> : <DocCheckIcon />}
+              {rechecking ? <SpinnerIcon size={18} color="var(--color-base-white)" /> : <DocCheckIcon />}
               {rechecking ? t('กำลังตรวจสอบทั้งหมด') : t('ตรวจสอบทั้งหมด')}
             </button>
           </div>

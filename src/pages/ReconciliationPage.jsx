@@ -135,7 +135,7 @@ export default function ReconciliationPage({ data: items, onChange, onView }) {
         <div className="recon-list-header">
           <h2>{tv('รายการตรวจสอบ {count} รายการ', { count: filtered.length })}</h2>
           <button className="ft-btn-primary" onClick={handleCheckAll} disabled={checkingAll}>
-            {checkingAll ? <SpinnerIcon size={18} color="#ffffff" /> : <DocCheckIcon />}
+            {checkingAll ? <SpinnerIcon size={18} color="var(--color-base-white)" /> : <DocCheckIcon />}
             {checkingAll ? t('กำลังตรวจสอบทั้งหมด') : t('ตรวจสอบทั้งหมด')}
           </button>
         </div>

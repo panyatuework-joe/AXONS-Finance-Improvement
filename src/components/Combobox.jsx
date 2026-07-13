@@ -74,9 +74,9 @@ export default function Combobox({
           </span>
         )}
         {open ? (
-          <ChevronUpIcon size={20} color={disabled ? '#8a95a8' : '#344054'} />
+          <ChevronUpIcon size={20} color={disabled ? 'var(--color-neutral-default)' : 'var(--color-text-normal)'} />
         ) : (
-          <ChevronDownIcon size={20} color={disabled ? '#8a95a8' : '#344054'} />
+          <ChevronDownIcon size={20} color={disabled ? 'var(--color-neutral-default)' : 'var(--color-text-normal)'} />
         )}
       </div>
 

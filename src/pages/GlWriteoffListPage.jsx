@@ -171,7 +171,7 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
                 <span className="filter-chip" key={`st-${v}`}>
                   {t(v)}
                   <button type="button" onClick={() => removeAppliedChip('status', v)}>
-                    <CloseIcon size={12} color="#ffffff" />
+                    <CloseIcon size={12} color="var(--color-base-white)" />
                   </button>
                 </span>
               ))}
@@ -179,7 +179,7 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
                 <span className="filter-chip" key={`cat-${v}`}>
                   {t(v)}
                   <button type="button" onClick={() => removeAppliedChip('category', v)}>
-                    <CloseIcon size={12} color="#ffffff" />
+                    <CloseIcon size={12} color="var(--color-base-white)" />
                   </button>
                 </span>
               ))}
@@ -198,18 +198,18 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
             <div className="ft-table-wrapper">
               <table className="ft-table">
                 <colgroup>
-                  <col style={{ width: '190px' }} />
-                  <col style={{ width: '300px' }} />
-                  <col style={{ width: '220px' }} />
-                  <col style={{ width: '220px' }} />
+                  <col style={{ width: '204px' }} />
+                  <col style={{ width: '365px' }} />
+                  <col style={{ width: '259px' }} />
+                  <col style={{ width: '231px' }} />
+                  <col style={{ width: '253px' }} />
+                  <col style={{ width: '148px' }} />
                   <col style={{ width: '170px' }} />
-                  <col style={{ width: '130px' }} />
-                  <col style={{ width: '140px' }} />
-                  <col style={{ width: '130px' }} />
-                  <col style={{ width: '170px' }} />
-                  <col style={{ width: '200px' }} />
-                  <col style={{ width: '130px' }} />
-                  <col style={{ width: '234px' }} />
+                  <col style={{ width: '109px' }} />
+                  <col style={{ width: '171px' }} />
+                  <col style={{ width: '193px' }} />
+                  <col style={{ width: '129px' }} />
+                  <col style={{ width: '231px' }} />
                 </colgroup>
                 <thead>
                   <tr>
@@ -221,7 +221,6 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
                         ['dept', 'หน่วยงานหลัก'],
                         ['subDept', 'หน่วยงานย่อย'],
                         ['category', 'ประเภท'],
-                        ['totalAmount', 'ยอดรวม'],
                       ]
                     ).map(([key, label]) => (
                       <th key={key} onClick={() => handleSort(key)} style={{ cursor: 'pointer' }}>
@@ -231,6 +230,12 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
                         </span>
                       </th>
                     ))}
+                    <th onClick={() => handleSort('totalAmount')} style={{ cursor: 'pointer', textAlign: 'right' }}>
+                      <span className="sort-th-inner" style={{ justifyContent: 'flex-end' }}>
+                        {t('ยอดรวม')}
+                        {renderSortIcon('totalAmount')}
+                      </span>
+                    </th>
                     <th>{t('ความคืบหน้า')}</th>
                     {(
                       [
@@ -258,7 +263,7 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
                       <td>{t(row.dept)}</td>
                       <td>{t(row.subDept)}</td>
                       <td>{t(row.category)}</td>
-                      <td>{formatMoney(row.totalAmount)}</td>
+                      <td style={{ textAlign: 'right' }}>{formatMoney(row.totalAmount)}</td>
                       <td>
                         {row.installmentsPaid}/{row.installments}
                       </td>

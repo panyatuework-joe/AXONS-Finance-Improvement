@@ -1,0 +1,439 @@
+/*
+  Central color tokens — source: Figma
+  "✅ Color Variables 🎨" (AXONS Light Mode / AXONS Dark Mode)
+  Do not hand-edit values here without updating the Figma source first.
+
+  Usage: light values are the defaults on :root (this matches the app's
+  current forced-light theme in shared.css). Dark values are opt-in via
+  [data-theme="dark"] on the root element for future dark-mode support.
+*/
+
+:root {
+  /* ===== Primary ===== */
+  --color-primary-default: #074E9F;
+  --color-primary-on-default: #F5FAFE;
+  --color-primary-container: #BDDBFC;
+  --color-primary-on-container: #0A6EE1;
+  --color-primary-surface: #BDDBFC;
+
+  /* ===== Secondary ===== */
+  --color-secondary-default: #22AB67;
+  --color-secondary-on-default: #F7FCFA;
+  --color-secondary-container: #C8EEDB;
+  --color-secondary-on-container: #43BC80;
+  --color-secondary-surface: #C8EEDB;
+
+  /* ===== Base ===== */
+  --color-base-white: #FFFFFF;
+  --color-base-gray: #F9FAFB;
+  --color-base-light: #8A95A8;
+  --color-base-lighter: #667085;
+  --color-base-dark: #344054;
+  --color-base-darker: #101828;
+
+  /* ===== Surface ===== */
+  --color-surface-primary: #F5FAFE;
+  --color-surface-secondary: #F7FCFA;
+  --color-surface-level03: #FFFFFF;
+  --color-surface-level02: #FFFFFF;
+  --color-surface-level01: #FFFFFF;
+  --color-surface-level00: #F2F4F7;
+
+  /* ===== Outline ===== */
+  --color-outline-primary: #DEEDFE;
+  --color-outline-secondary: #E3F7ED;
+  --color-outline-lighter-gray: #E4E7EC;
+  --color-outline-gray: #A6B0BF;
+  --color-outline-darker-gray: #667085;
+  --color-outline-focus: #0A6EE1;
+
+  /* ===== Descriptive text ===== */
+  --color-text-normal: #344054;
+  --color-text-light: #667085;
+  --color-text-lighter: #8A95A8;
+  --color-text-lightest: #E4E7EC;
+
+  /* ===== Link text ===== */
+  --color-link-normal: #0A6EE1;
+  --color-link-neutral: #344054;
+
+  /* ===== Success ===== */
+  --color-success-default: #07A721;
+  --color-success-on-default: #F9FBF9;
+  --color-success-container: #E4F0E5;
+  --color-success-on-container: #06951E;
+  --color-success-surface: #E4F0E5;
+
+  --color-success-spare-default: #00B2AA;
+  --color-success-spare-on-default: #F9FCFB;
+  --color-success-spare-container: #E4F2F0;
+  --color-success-spare-on-container: #009F98;
+  --color-success-spare-surface: #E4F2F0;
+
+  /* ===== Error ===== */
+  --color-error-default: #D92D20;
+  --color-error-on-default: #FDF9F9;
+  --color-error-container: #F8E5E5;
+  --color-error-on-container: #C2281D;
+  --color-error-surface: #F8E5E5;
+
+  --color-error-spare-default: #E5347C;
+  --color-error-spare-on-default: #FEF9FA;
+  --color-error-spare-container: #FAE5EB;
+  --color-error-spare-on-container: #CD2F6F;
+  --color-error-spare-surface: #FAE5EB;
+
+  /* ===== Warning ===== */
+  --color-warning-default: #F8BD26;
+  --color-warning-on-default: #FFFCF9;
+  --color-warning-container: #FEF3E5;
+  --color-warning-on-container: #DEA922;
+  --color-warning-surface: #FEF3E5;
+
+  --color-warning-spare-default: #F79009;
+  --color-warning-spare-on-default: #FFFBF9;
+  --color-warning-spare-container: #FDEDE4;
+  --color-warning-spare-on-container: #DD8108;
+  --color-warning-spare-surface: #FDEDE4;
+
+  /* ===== New ===== */
+  --color-new-default: #6554C0;
+  --color-new-on-default: #FAF9FC;
+  --color-new-container: #E9E7F4;
+  --color-new-on-container: #5A4BAC;
+  --color-new-surface: #E9E7F4;
+
+  --color-new-spare-default: #BF5AF2;
+  --color-new-spare-on-default: #FCF9FE;
+  --color-new-spare-container: #F4E8FC;
+  --color-new-spare-on-container: #AB50D8;
+  --color-new-spare-surface: #F4E8FC;
+
+  /* ===== Info ===== */
+  --color-info-default: #0086C9;
+  --color-info-on-default: #F8FAFC;
+  --color-info-container: #ECF2F8;
+  --color-info-on-container: #0078B4;
+  --color-info-surface: #ECF2F8;
+
+  /* ===== Neutral ===== */
+  --color-neutral-default: #8A95A8;
+  --color-neutral-on-default: #F9FAFB;
+  --color-neutral-container: #F9FAFB;
+  --color-neutral-on-container: #8A95A8;
+  --color-neutral-surface: #F9FAFB;
+
+  /* ===== Visual scale — primary (blue) ===== */
+  --color-visual-primary-25: #F5FAFE;
+  --color-visual-primary-50: #DEEDFE;
+  --color-visual-primary-100: #BDDBFC;
+  --color-visual-primary-400: #0A6EE1;
+  --color-visual-primary-500: #074E9F;
+
+  /* ===== Visual scale — secondary (green) ===== */
+  --color-visual-secondary-25: #F7FCFA;
+  --color-visual-secondary-50: #E3F7ED;
+  --color-visual-secondary-100: #C8EEDB;
+  --color-visual-secondary-400: #43BC80;
+  --color-visual-secondary-500: #22AB67;
+
+  /* ===== Creation — interactive button states ===== */
+  --color-creation-primary-default: #0962CB;
+  --color-creation-primary-on-default: #F5FAFE;
+  --color-creation-primary-cont-default: #F5FAFE;
+  --color-creation-primary-on-cont-default: #074E9F;
+  --color-creation-primary-pressed: #042F5F;
+  --color-creation-primary-on-pressed: #F5FAFE;
+  --color-creation-primary-cont-pressed: #BDDBFC;
+  --color-creation-primary-on-cont-pressed: #042F5F;
+  --color-creation-primary-hover: #0A6EE1;
+  --color-creation-primary-on-hover: #F5FAFE;
+  --color-creation-primary-cont-hover: #DEEDFE;
+  --color-creation-primary-on-cont-hover: #0A6EE1;
+  --color-creation-primary-selected: #063E7F;
+  --color-creation-primary-on-selected: #F5FAFE;
+  --color-creation-primary-cont-selected: #BDDBFC;
+  --color-creation-primary-on-cont-selected: #063E7F;
+  --color-creation-primary-disabled: #E9ECF1;
+  --color-creation-primary-on-disabled: #A6B0BF;
+  --color-creation-primary-cont-disabled: #F9FAFB;
+  --color-creation-primary-on-cont-disabled: #E4E7EC;
+
+  --color-creation-secondary-default: #22AB67;
+  --color-creation-secondary-on-default: #F7FCFA;
+  --color-creation-secondary-cont-default: #F7FCFA;
+  --color-creation-secondary-on-cont-default: #22AB67;
+  --color-creation-secondary-pressed: #35674E;
+  --color-creation-secondary-on-pressed: #F7FCFA;
+  --color-creation-secondary-cont-pressed: #C8EEDB;
+  --color-creation-secondary-on-cont-pressed: #35674E;
+  --color-creation-secondary-hover: #43BC80;
+  --color-creation-secondary-on-hover: #F7FCFA;
+  --color-creation-secondary-cont-hover: #E3F7ED;
+  --color-creation-secondary-on-cont-hover: #43BC80;
+  --color-creation-secondary-selected: #31895D;
+  --color-creation-secondary-on-selected: #F7FCFA;
+  --color-creation-secondary-cont-selected: #C8EEDB;
+  --color-creation-secondary-on-cont-selected: #31895D;
+  --color-creation-secondary-disabled: #E9ECF1;
+  --color-creation-secondary-on-disabled: #A6B0BF;
+  --color-creation-secondary-cont-disabled: #F9FAFB;
+  --color-creation-secondary-on-cont-disabled: #E4E7EC;
+
+  --color-creation-error-default: #D92D20;
+  --color-creation-error-on-default: #FDF9F9;
+  --color-creation-error-cont-default: #FDF9F9;
+  --color-creation-error-on-cont-default: #D92D20;
+  --color-creation-error-pressed: #A82319;
+  --color-creation-error-on-pressed: #FDF9F9;
+  --color-creation-error-cont-pressed: #F8E5E5;
+  --color-creation-error-on-cont-pressed: #A82319;
+  --color-creation-error-hover: #E17976;
+  --color-creation-error-on-hover: #FDF9F9;
+  --color-creation-error-cont-hover: #FBF2F2;
+  --color-creation-error-on-cont-hover: #E17976;
+  --color-creation-error-selected: #C2281D;
+  --color-creation-error-on-selected: #FDF9F9;
+  --color-creation-error-cont-selected: #F8E5E5;
+  --color-creation-error-on-cont-selected: #C2281D;
+  --color-creation-error-disabled: #E9ECF1;
+  --color-creation-error-on-disabled: #A6B0BF;
+  --color-creation-error-cont-disabled: #F9FAFB;
+  --color-creation-error-on-cont-disabled: #E4E7EC;
+
+  --color-creation-neutral-default: #8A95A8;
+  --color-creation-neutral-on-default: #FFFFFF;
+  --color-creation-neutral-cont-default: #FFFFFF;
+  --color-creation-neutral-on-cont-default: #8A95A8;
+  --color-creation-neutral-pressed: #101828;
+  --color-creation-neutral-on-pressed: #FFFFFF;
+  --color-creation-neutral-cont-pressed: #F9FAFB;
+  --color-creation-neutral-on-cont-pressed: #101828;
+  --color-creation-neutral-hover: #A6B0BF;
+  --color-creation-neutral-on-hover: #FFFFFF;
+  --color-creation-neutral-cont-hover: #F9FAFB;
+  --color-creation-neutral-on-cont-hover: #A6B0BF;
+  --color-creation-neutral-selected: #1D2939;
+  --color-creation-neutral-on-selected: #FFFFFF;
+  --color-creation-neutral-cont-selected: #F9FAFB;
+  --color-creation-neutral-on-cont-selected: #667085;
+  --color-creation-neutral-disabled: #E9ECF1;
+  --color-creation-neutral-on-disabled: #A6B0BF;
+  --color-creation-neutral-cont-disabled: #F9FAFB;
+  --color-creation-neutral-on-cont-disabled: #E4E7EC;
+}
+
+[data-theme='dark'] {
+  /* ===== Primary ===== */
+  --color-primary-default: #074E9F;
+  --color-primary-on-default: #F5FAFE;
+  --color-primary-container: #031F40;
+  --color-primary-on-container: #0A6EE1;
+  --color-primary-surface: #031F40;
+
+  /* ===== Secondary ===== */
+  --color-secondary-default: #22AB67;
+  --color-secondary-on-default: #F7FCFA;
+  --color-secondary-container: #2E443A;
+  --color-secondary-on-container: #43BC80;
+  --color-secondary-surface: #2E443A;
+
+  /* ===== Base ===== */
+  --color-base-white: #101828;
+  --color-base-gray: #344054;
+  --color-base-light: #667085;
+  --color-base-lighter: #8A95A8;
+  --color-base-dark: #F9FAFB;
+  --color-base-darker: #FFFFFF;
+
+  /* ===== Surface ===== */
+  --color-surface-primary: #101828;
+  --color-surface-secondary: #101110;
+  --color-surface-level03: #101828;
+  --color-surface-level02: #0D1321;
+  --color-surface-level01: #090D17;
+  --color-surface-level00: #030508;
+
+  /* ===== Outline ===== */
+  --color-outline-primary: #074E9F;
+  --color-outline-secondary: #22AB67;
+  --color-outline-lighter-gray: #667085;
+  --color-outline-gray: #8A95A8;
+  --color-outline-darker-gray: #A6B0BF;
+  --color-outline-focus: #0A6EE1;
+
+  /* ===== Descriptive text ===== */
+  --color-text-normal: #E4E7EC;
+  --color-text-light: #8A95A8;
+  --color-text-lighter: #667085;
+  --color-text-lightest: #344054;
+
+  /* ===== Link text ===== */
+  --color-link-normal: #0A6EE1;
+  --color-link-neutral: #F9FAFB;
+
+  /* ===== Success ===== */
+  --color-success-default: #07A721;
+  --color-success-on-default: #F9FBF9;
+  --color-success-container: #02350A;
+  --color-success-on-container: #06951E;
+  --color-success-surface: #02350A;
+
+  --color-success-spare-default: #00B2AA;
+  --color-success-spare-on-default: #F9FCFB;
+  --color-success-spare-container: #003836;
+  --color-success-spare-on-container: #009F98;
+  --color-success-spare-surface: #003836;
+
+  /* ===== Error ===== */
+  --color-error-default: #D92D20;
+  --color-error-on-default: #FDF9F9;
+  --color-error-container: #450E0A;
+  --color-error-on-container: #C2281D;
+  --color-error-surface: #450E0A;
+
+  --color-error-spare-default: #E5347C;
+  --color-error-spare-on-default: #FEF9FA;
+  --color-error-spare-container: #481027;
+  --color-error-spare-on-container: #CD2F6F;
+  --color-error-spare-surface: #481027;
+
+  /* ===== Warning ===== */
+  --color-warning-default: #F8BD26;
+  --color-warning-on-default: #FFFCF9;
+  --color-warning-container: #4E3C0C;
+  --color-warning-on-container: #DEA922;
+  --color-warning-surface: #4E3C0C;
+
+  --color-warning-spare-default: #F79009;
+  --color-warning-spare-on-default: #FFFBF9;
+  --color-warning-spare-container: #4E2E03;
+  --color-warning-spare-on-container: #DD8108;
+  --color-warning-spare-surface: #4E2E03;
+
+  /* ===== New ===== */
+  --color-new-default: #6554C0;
+  --color-new-on-default: #FAF9FC;
+  --color-new-container: #201B3D;
+  --color-new-on-container: #5A4BAC;
+  --color-new-surface: #201B3D;
+
+  --color-new-spare-default: #BF5AF2;
+  --color-new-spare-on-default: #FCF9FE;
+  --color-new-spare-container: #3C1C4D;
+  --color-new-spare-on-container: #AB50D8;
+  --color-new-spare-surface: #3C1C4D;
+
+  /* ===== Info ===== */
+  --color-info-default: #0086C9;
+  --color-info-on-default: #F8FAFC;
+  --color-info-container: #002A40;
+  --color-info-on-container: #0078B4;
+  --color-info-surface: #002A40;
+
+  /* ===== Neutral ===== */
+  --color-neutral-default: #8A95A8;
+  --color-neutral-on-default: #F9FAFB;
+  --color-neutral-container: #1D2939;
+  --color-neutral-on-container: #8A95A8;
+  --color-neutral-surface: #1D2939;
+
+  /* ===== Visual scale — primary (blue) ===== */
+  --color-visual-primary-25: #063E7F;
+  --color-visual-primary-50: #042F5F;
+  --color-visual-primary-100: #031F40;
+  --color-visual-primary-400: #0A6EE1;
+  --color-visual-primary-500: #074E9F;
+
+  /* ===== Visual scale — secondary (green) ===== */
+  --color-visual-secondary-25: #31895D;
+  --color-visual-secondary-50: #35674E;
+  --color-visual-secondary-100: #2E443A;
+  --color-visual-secondary-400: #43BC80;
+  --color-visual-secondary-500: #22AB67;
+
+  /* ===== Creation — interactive button states ===== */
+  --color-creation-primary-default: #0962CB;
+  --color-creation-primary-on-default: #F5FAFE;
+  --color-creation-primary-cont-default: #063E7F;
+  --color-creation-primary-on-cont-default: #0962CB;
+  --color-creation-primary-pressed: #063E7F;
+  --color-creation-primary-on-pressed: #F5FAFE;
+  --color-creation-primary-cont-pressed: #063E7F;
+  --color-creation-primary-on-cont-pressed: #DEEDFE;
+  --color-creation-primary-hover: #0A6EE1;
+  --color-creation-primary-on-hover: #F5FAFE;
+  --color-creation-primary-cont-hover: #0A6EE1;
+  --color-creation-primary-on-cont-hover: #DEEDFE;
+  --color-creation-primary-selected: #074E9F;
+  --color-creation-primary-on-selected: #F5FAFE;
+  --color-creation-primary-cont-selected: #074E9F;
+  --color-creation-primary-on-cont-selected: #DEEDFE;
+  --color-creation-primary-disabled: #344054;
+  --color-creation-primary-on-disabled: #8A95A8;
+  --color-creation-primary-cont-disabled: #8A95A8;
+  --color-creation-primary-on-cont-disabled: #344054;
+
+  --color-creation-secondary-default: #22AB67;
+  --color-creation-secondary-on-default: #F7FCFA;
+  --color-creation-secondary-cont-default: #31895D;
+  --color-creation-secondary-on-cont-default: #22AB67;
+  --color-creation-secondary-pressed: #35674E;
+  --color-creation-secondary-on-pressed: #F7FCFA;
+  --color-creation-secondary-cont-pressed: #2E443A;
+  --color-creation-secondary-on-cont-pressed: #C8EEDB;
+  --color-creation-secondary-hover: #43BC80;
+  --color-creation-secondary-on-hover: #F7FCFA;
+  --color-creation-secondary-cont-hover: #43BC80;
+  --color-creation-secondary-on-cont-hover: #E3F7ED;
+  --color-creation-secondary-selected: #31895D;
+  --color-creation-secondary-on-selected: #F7FCFA;
+  --color-creation-secondary-cont-selected: #35674E;
+  --color-creation-secondary-on-cont-selected: #C8EEDB;
+  --color-creation-secondary-disabled: #344054;
+  --color-creation-secondary-on-disabled: #8A95A8;
+  --color-creation-secondary-cont-disabled: #8A95A8;
+  --color-creation-secondary-on-cont-disabled: #344054;
+
+  --color-creation-error-default: #D92D20;
+  --color-creation-error-on-default: #FDF9F9;
+  --color-creation-error-cont-default: #C2281D;
+  --color-creation-error-on-cont-default: #D92D20;
+  --color-creation-error-pressed: #A82319;
+  --color-creation-error-on-pressed: #FDF9F9;
+  --color-creation-error-cont-pressed: #A82319;
+  --color-creation-error-on-cont-pressed: #F8E5E5;
+  --color-creation-error-hover: #E17976;
+  --color-creation-error-on-hover: #FDF9F9;
+  --color-creation-error-cont-hover: #E17976;
+  --color-creation-error-on-cont-hover: #FBF2F2;
+  --color-creation-error-selected: #C2281D;
+  --color-creation-error-on-selected: #FDF9F9;
+  --color-creation-error-cont-selected: #A82319;
+  --color-creation-error-on-cont-selected: #F8E5E5;
+  --color-creation-error-disabled: #344054;
+  --color-creation-error-on-disabled: #8A95A8;
+  --color-creation-error-cont-disabled: #8A95A8;
+  --color-creation-error-on-cont-disabled: #344054;
+
+  --color-creation-neutral-default: #8A95A8;
+  --color-creation-neutral-on-default: #FFFFFF;
+  --color-creation-neutral-cont-default: #667085;
+  --color-creation-neutral-on-cont-default: #8A95A8;
+  --color-creation-neutral-pressed: #475467;
+  --color-creation-neutral-on-pressed: #FFFFFF;
+  --color-creation-neutral-cont-pressed: #475467;
+  --color-creation-neutral-on-cont-pressed: #F9FAFB;
+  --color-creation-neutral-hover: #A6B0BF;
+  --color-creation-neutral-on-hover: #FFFFFF;
+  --color-creation-neutral-cont-hover: #A6B0BF;
+  --color-creation-neutral-on-cont-hover: #F9FAFB;
+  --color-creation-neutral-selected: #667085;
+  --color-creation-neutral-on-selected: #FFFFFF;
+  --color-creation-neutral-cont-selected: #475467;
+  --color-creation-neutral-on-cont-selected: #F9FAFB;
+  --color-creation-neutral-disabled: #344054;
+  --color-creation-neutral-on-disabled: #8A95A8;
+  --color-creation-neutral-cont-disabled: #8A95A8;
+  --color-creation-neutral-on-cont-disabled: #344054;
+}

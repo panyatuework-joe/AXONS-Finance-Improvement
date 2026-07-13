@@ -37,11 +37,11 @@ export default function FinancialTargetViewPage({ target, onBack, onEdit, onDele
           <h1 className="aft-page-title">{t('รายละเอียดเป้าหมายงบการเงิน')}</h1>
           <div className="view-header-actions">
             <button className="ft-btn-outline" onClick={onEdit}>
-              <EditIcon color="#074E9F" />
+              <EditIcon color="var(--color-primary-default)" />
               {t('แก้ไข')}
             </button>
             <button className="ft-btn-outline-danger" onClick={() => setDeleteConfirmOpen(true)}>
-              <DeleteIcon color="#D92D20" />
+              <DeleteIcon color="var(--color-error-default)" />
               {t('ลบ')}
             </button>
           </div>

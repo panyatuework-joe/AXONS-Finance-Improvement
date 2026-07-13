@@ -120,7 +120,7 @@ export default function DateRangePicker({
         <span className={`date-range-value${!displayText ? ' date-range-value--placeholder' : ''}`}>
           {displayText || t(placeholder)}
         </span>
-        <CalendarIcon size={18} color="#8a95a8" />
+        <CalendarIcon size={18} color="var(--color-neutral-default)" />
       </div>
 
       {open &&

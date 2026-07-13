@@ -51,7 +51,7 @@ export default function MultiSelect({ values, onChange, options, placeholder = '
               <span className="multiselect-chip" key={v}>
                 <span className="multiselect-chip-label">{options.find((o) => o.value === v)?.label ?? v}</span>
                 <button type="button" onClick={(e) => removeChip(v, e)}>
-                  <CloseIcon size={12} color="#ffffff" />
+                  <CloseIcon size={12} color="var(--color-base-white)" />
                 </button>
               </span>
             ))}
@@ -60,7 +60,7 @@ export default function MultiSelect({ values, onChange, options, placeholder = '
         )}
         {values.length > 0 && (
           <button type="button" className="multiselect-clear" onClick={clearAll}>
-            <CloseIcon size={16} color="#667085" />
+            <CloseIcon size={16} color="var(--color-text-light)" />
           </button>
         )}
         <ChevronDownIcon size={20} />
