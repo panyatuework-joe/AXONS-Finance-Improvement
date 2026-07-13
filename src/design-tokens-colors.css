@@ -137,8 +137,12 @@
   --color-visual-secondary-400: #43BC80;
   --color-visual-secondary-500: #22AB67;
 
+  /* ===== Base colour / Surface colour — legacy alias collection ===== */
+  --color-alias-base-light: #D0D5DD;
+  --color-alias-neutral-surface: #F6F7F9;
+
   /* ===== Creation — interactive button states ===== */
-  --color-creation-primary-default: #0962CB;
+  --color-creation-primary-default: #074E9F;
   --color-creation-primary-on-default: #F5FAFE;
   --color-creation-primary-cont-default: #F5FAFE;
   --color-creation-primary-on-cont-default: #074E9F;
@@ -204,7 +208,7 @@
   --color-creation-neutral-default: #8A95A8;
   --color-creation-neutral-on-default: #FFFFFF;
   --color-creation-neutral-cont-default: #FFFFFF;
-  --color-creation-neutral-on-cont-default: #8A95A8;
+  --color-creation-neutral-on-cont-default: #344054;
   --color-creation-neutral-pressed: #101828;
   --color-creation-neutral-on-pressed: #FFFFFF;
   --color-creation-neutral-cont-pressed: #F9FAFB;

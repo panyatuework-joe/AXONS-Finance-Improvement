@@ -330,7 +330,7 @@ button {
 
 .ft-menu-label--selected {
   font-weight: var(--fw-semibold);
-  color: #063e7f;
+  color: var(--color-creation-primary-selected);
   line-height: 24px;
 }
 
@@ -373,7 +373,7 @@ button {
 
 .ft-submenu-label--active {
   font-weight: var(--fw-semibold);
-  color: #063e7f;
+  color: var(--color-creation-primary-selected);
   line-height: 24px;
 }
 
@@ -873,9 +873,9 @@ th.ft-table-action-col {
   flex-shrink: 0;
 }
 
-.status-badge--ok { background: #ecfdf3; color: var(--color-success-default); }
-.status-badge--warn { background: #fffaeb; color: #b54708; }
-.status-badge--bad { background: #fef3f2; color: var(--color-error-default); }
+.status-badge--ok { background: var(--color-success-container); color: var(--color-success-default); }
+.status-badge--warn { background: var(--color-warning-container); color: var(--color-warning-default); }
+.status-badge--bad { background: var(--color-error-container); color: var(--color-error-default); }
 .status-badge--neutral { background: var(--color-surface-level00); color: var(--color-text-light); }
 
 /* ===== PAGINATION ===== */
@@ -940,7 +940,7 @@ th.ft-table-action-col {
 }
 
 .ft-page-btn--active:hover {
-  background: #063e7f;
+  background: var(--color-creation-primary-selected);
 }
 
 .ft-page-ellipsis {
@@ -1464,7 +1464,7 @@ th.ft-table-action-col {
 }
 
 .aft-btn-add:hover {
-  background: #063e7f;
+  background: var(--color-creation-primary-selected);
 }
 
 .aft-btn-add:disabled {
@@ -1848,7 +1848,7 @@ th.ft-table-action-col {
 }
 
 .dialog-btn--primary:hover {
-  background: #063e7f;
+  background: var(--color-creation-primary-selected);
 }
 
 .dialog-btn--danger {
@@ -1953,7 +1953,7 @@ th.ft-table-action-col {
   height: 24px;
   border-radius: 999px;
   border: none;
-  background: #d0d5dd;
+  background: var(--color-alias-base-light);
   cursor: pointer;
   position: relative;
   padding: 0;
@@ -2772,7 +2772,7 @@ th.ft-table-action-col {
 }
 
 .recon-check-btn:disabled {
-  border-color: #d0d5dd;
+  border-color: var(--color-alias-base-light);
   color: #98a2b3;
   cursor: not-allowed;
   background: var(--color-base-gray);
@@ -2911,7 +2911,7 @@ th.ft-table-action-col {
 }
 
 /* ===== GL WRITE-OFF (ตัดบัญชี GL) ===== */
-.status-badge--info { background: #eff8ff; color: #175cd3; }
+.status-badge--info { background: var(--color-info-container); color: var(--color-info-default); }
 
 .glw-hint {
   font-size: var(--fs-hint-2);
@@ -2931,7 +2931,7 @@ th.ft-table-action-col {
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  background: #063e7f;
+  background: var(--color-creation-primary-selected);
   color: var(--color-base-white);
   border: none;
   border-radius: 6px;
@@ -3022,14 +3022,14 @@ th.ft-table-action-col {
   text-align: right;
   font-size: var(--fs-label-5);
   font-weight: var(--fw-semibold);
-  color: #1570ef;
+  color: var(--color-link-normal);
 }
 
 .glw-total-amount {
   text-align: right;
   font-size: var(--fs-body-4);
   font-weight: var(--fw-bold);
-  color: #1570ef;
+  color: var(--color-link-normal);
   white-space: nowrap;
 }
 
@@ -3267,7 +3267,7 @@ th.ft-table-action-col {
 }
 
 .glwd-file-action-btn--filled:hover {
-  background: #063e7f;
+  background: var(--color-creation-primary-selected);
 }
 
 .glwd-file-action-btn--danger {
@@ -3589,7 +3589,7 @@ th.ft-table-status-col {
   width: 100%;
   color: var(--color-text-light);
   font-size: var(--fs-body-4);
-  background: #f6f7f9;
+  background: var(--color-alias-neutral-surface);
 }
 
 /* ===== PURCHASE TAX INVOICE PAGE ===== */
@@ -3617,5 +3617,5 @@ th.ft-table-status-col {
 }
 
 .pti-ref-link:hover {
-  color: #063e7f;
+  color: var(--color-creation-primary-selected);
 }

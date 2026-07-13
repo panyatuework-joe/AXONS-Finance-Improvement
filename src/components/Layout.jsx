@@ -222,13 +222,13 @@ export default function Layout({ activeKey, onNavigate, onLogoutClick, children 
               onClick={() => setLedgerExpanded((v) => !v)}
             >
               <div className="ft-menu-icon">
-                <FinanceIcon color={ledgerActive ? '#063e7f' : 'var(--color-text-normal)'} />
+                <FinanceIcon color={ledgerActive ? 'var(--color-creation-primary-selected)' : 'var(--color-text-normal)'} />
               </div>
               <span className={`ft-menu-label${ledgerActive ? ' ft-menu-label--selected' : ''}`}>
                 {t('บัญชีแยกประเภท')}
               </span>
               <div className="ft-menu-chevron">
-                {ledgerExpanded ? <ChevronUpIcon color="#063e7f" /> : <ChevronDownIcon />}
+                {ledgerExpanded ? <ChevronUpIcon color="var(--color-creation-primary-selected)" /> : <ChevronDownIcon />}
               </div>
             </div>
 
@@ -249,7 +249,7 @@ export default function Layout({ activeKey, onNavigate, onLogoutClick, children 
                     {t('ตัดบัญชี GL')}
                   </span>
                   <div className="ft-submenu-chevron">
-                    {glWriteoffExpanded ? <ChevronUpIcon color="#063e7f" size={16} /> : <ChevronDownIcon size={16} />}
+                    {glWriteoffExpanded ? <ChevronUpIcon color="var(--color-creation-primary-selected)" size={16} /> : <ChevronDownIcon size={16} />}
                   </div>
                 </div>
 
@@ -301,7 +301,7 @@ export default function Layout({ activeKey, onNavigate, onLogoutClick, children 
                     {t('จัดการข้อมูล')}
                   </span>
                   <div className="ft-submenu-chevron">
-                    {manageExpanded ? <ChevronUpIcon color="#063e7f" size={16} /> : <ChevronDownIcon size={16} />}
+                    {manageExpanded ? <ChevronUpIcon color="var(--color-creation-primary-selected)" size={16} /> : <ChevronDownIcon size={16} />}
                   </div>
                 </div>
 

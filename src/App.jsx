@@ -158,7 +158,7 @@ function AppShellRouter() {
   if (initialLoading) {
     return (
       <div className="app-loading-screen">
-        <SpinnerIcon size={32} color="#074E9F" />
+        <SpinnerIcon size={32} color="var(--color-primary-default)" />
         <span>{t('กำลังโหลดข้อมูล...')}</span>
       </div>
     );
