@@ -253,7 +253,7 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
       <div className="aft-page-header">
         <div className="aft-breadcrumb">
           <span className="aft-breadcrumb-link" onClick={onCancel}>
-            {t('จัดการรายการตัดบัญชี')}
+            {t('จัดการรายการบัญชีประจำ')}
           </span>
           <ChevronBreadcrumbIcon />
           <span className="aft-breadcrumb-current">{t('นำเข้าไฟล์รายการตัดบัญชี')}</span>

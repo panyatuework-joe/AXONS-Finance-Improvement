@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import Dialog from '../components/Dialog';
 import StatusBadge from '../components/StatusBadge';
-import { buildGlWriteoffSchedule, formatWholeAmount, glWriteoffPerPeriodAmount } from '../utils';
+import { buildGlWriteoffSchedule, glWriteoffPerPeriodAmount } from '../utils';
 import {
   CancelCircleIcon,
   ChevronBreadcrumbIcon,
@@ -87,7 +87,7 @@ export default function GlWriteoffDetailPage({ entry, onBack, onStatusChange, on
       <div className="aft-page-header glwd-header">
         <div className="aft-breadcrumb">
           <span className="aft-breadcrumb-link" onClick={onBack}>
-            {t('จัดการรายการตัดบัญชี')}
+            {t('จัดการรายการบัญชีประจำ')}
           </span>
           <ChevronBreadcrumbIcon />
           <span className="aft-breadcrumb-current">{t('รายละเอียดรายการตัดบัญชี')}</span>
@@ -164,7 +164,7 @@ export default function GlWriteoffDetailPage({ entry, onBack, onStatusChange, on
       )}
 
       <div className="aft-card glwd-view">
-        <div className="aft-section-title">{t('ข้อมูลการตัดบัญชี')}</div>
+        <div className="aft-section-title">{t('ข้อมูลบัญชีประจำ')}</div>
 
         <div className="view-detail-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
           <div className="view-detail-field">
@@ -252,18 +252,18 @@ export default function GlWriteoffDetailPage({ entry, onBack, onStatusChange, on
               {t('ข้อมูลบัญชี')}
             </div>
             <div className="glw-section-subtitle">
-              {t('ระบบคำนวณยอดเดบิตและเครดิตเริ่มต้นจากยอดรวมทั้งสัญญา ออกมาเป็นยอดตัดบัญชีต่อเดือน')}
+              {t('ระบบคำนวณยอดเดบิตและเครดิตเริ่มต้นจากยอดรวมทั้งสัญญา ออกมาเป็นยอดบัญชีประจำต่อเดือน')}
             </div>
           </div>
         </div>
         <div className="glw-line-table-wrapper">
-          <table className="glw-line-table">
+          <table className="glw-line-table glw-account-table" style={{ minWidth: '1110px' }}>
             <colgroup>
-              <col style={{ width: '220px' }} />
-              <col style={{ width: '220px' }} />
-              <col />
-              <col style={{ width: '160px' }} />
-              <col style={{ width: '160px' }} />
+              <col style={{ width: '222px' }} />
+              <col style={{ width: '222px' }} />
+              <col style={{ width: '222px' }} />
+              <col style={{ width: '222px' }} />
+              <col style={{ width: '222px' }} />
             </colgroup>
             <thead>
               <tr>
@@ -280,16 +280,16 @@ export default function GlWriteoffDetailPage({ entry, onBack, onStatusChange, on
                   <td>{t(line.dept)}</td>
                   <td>{t(line.accountCode)}</td>
                   <td>{t(line.cvCode)}</td>
-                  <td className="glw-col-amount">{line.side === 'debit' ? formatWholeAmount(perPeriodAmount) : ''}</td>
-                  <td className="glw-col-amount">{line.side === 'credit' ? formatWholeAmount(perPeriodAmount) : ''}</td>
+                  <td className="glw-col-amount">{line.side === 'debit' ? formatMoney(perPeriodAmount) : ''}</td>
+                  <td className="glw-col-amount">{line.side === 'credit' ? formatMoney(perPeriodAmount) : ''}</td>
                 </tr>
               ))}
               <tr className="glw-total-row">
                 <td colSpan={3} className="glw-total-label">
                   {t('ยอดรวม')}
                 </td>
-                <td className="glw-col-amount glw-total-amount">{formatWholeAmount(debitTotal)}</td>
-                <td className="glw-col-amount glw-total-amount">{formatWholeAmount(creditTotal)}</td>
+                <td className="glw-col-amount glw-total-amount">{formatMoney(debitTotal)}</td>
+                <td className="glw-col-amount glw-total-amount">{formatMoney(creditTotal)}</td>
               </tr>
             </tbody>
           </table>
@@ -300,7 +300,7 @@ export default function GlWriteoffDetailPage({ entry, onBack, onStatusChange, on
         <div className="glw-section-header">
           <div>
             <div className="aft-section-title" style={{ marginBottom: 0 }}>
-              {t('รายละเอียดการตัดบัญชีรายงวด')}
+              {t('รายละเอียดบัญชีประจำรายงวด')}
             </div>
             <div className="glw-section-subtitle">
               {t('ระบบคำนวณยอดตัดบัญชีอัตโนมัติ')}{' '}
@@ -328,7 +328,7 @@ export default function GlWriteoffDetailPage({ entry, onBack, onStatusChange, on
         </div>
 
         <div className="glw-line-table-wrapper">
-          <table className="glw-line-table glw-schedule-table">
+          <table className="glw-line-table glw-schedule-table" style={{ minWidth: '640px' }}>
             <colgroup>
               <col style={{ width: '100px' }} />
               <col style={{ width: '120px' }} />

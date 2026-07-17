@@ -25,11 +25,14 @@ export function formatDateCompact(d) {
 
 const THAI_BE_MONTHS_PER_YEAR = 12;
 
-// แต่ละงวด (ยกเว้นงวดที่ 1) ต้องเป็นจำนวนเต็มบาทไม่มีทศนิยม เศษที่หารไม่ลงตัวจะถูกทบไปรวมที่งวดที่ 1
+// แต่ละงวด (ยกเว้นงวดที่ 1) ต้องเป็นจำนวนเต็มบาทไม่มีทศนิยม โดยหายอดเฉลี่ยต่องวด (ปัดทศนิยม 2 ตำแหน่ง)
+// ก่อน แล้วตัดเศษทศนิยมของงวด 2-N ทิ้ง เศษที่ถูกตัดจากทุกงวด (รวมงวดที่ 1 เอง) จะถูกทบไปรวมที่งวดที่ 1 ทั้งหมด
 export function buildGlWriteoffSchedule(totalAmount, installments, startPeriod) {
   if (totalAmount <= 0 || installments <= 0 || !startPeriod) return [];
-  const per = Math.floor(totalAmount / installments);
-  const first = Math.round((totalAmount - per * (installments - 1)) * 100) / 100;
+  const average = Math.round((totalAmount / installments) * 100) / 100;
+  const per = Math.floor(average);
+  const fraction = Math.round((average - per) * 100) / 100;
+  const first = Math.round((per + fraction * installments) * 100) / 100;
   const [startMonth, startYear] = startPeriod.split('/').map((v) => parseInt(v, 10));
   return Array.from({ length: installments }, (_, i) => {
     const monthIndex = startMonth - 1 + i;
@@ -46,11 +49,8 @@ export function buildGlWriteoffSchedule(totalAmount, installments, startPeriod) 
 // ยอดตัดบัญชีต่อเดือน (งวดที่ 2 เป็นต้นไป) ใช้เป็นยอดบัญชีเดบิต/เครดิตของรายการ ต้องเป็นจำนวนเต็มบาท
 export function glWriteoffPerPeriodAmount(totalAmount, installments) {
   if (totalAmount <= 0 || installments <= 0) return 0;
-  return Math.floor(totalAmount / installments);
-}
-
-export function formatWholeAmount(n) {
-  return Math.round(n).toLocaleString('en-US');
+  const average = Math.round((totalAmount / installments) * 100) / 100;
+  return Math.floor(average);
 }
 
 export function nextGlWriteoffCode(existing) {

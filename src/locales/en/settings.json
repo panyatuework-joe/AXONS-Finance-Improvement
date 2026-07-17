@@ -1,0 +1,10 @@
+{
+  "phrases": {
+    "ภาษา": "Language",
+    "เลือกภาษาที่แสดงในแถบเมนูบน (TH / EN)": "Choose the display language for the top menu bar (TH / EN)",
+    "การแจ้งเตือน": "Notifications",
+    "แสดงข้อความแจ้งเตือนเมื่อเพิ่ม/แก้ไข/ลบข้อมูลสำเร็จ": "Show notification messages when add/edit/delete actions succeed",
+    "ผู้ใช้งาน": "User"
+  },
+  "templates": {}
+}

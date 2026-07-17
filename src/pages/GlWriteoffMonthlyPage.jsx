@@ -7,7 +7,7 @@ import EmptyState from '../components/EmptyState';
 import StatusBadge from '../components/StatusBadge';
 import MultiSelect from '../components/MultiSelect';
 import { THAI_MONTH_OPTIONS, START_PERIOD_OPTIONS } from '../data';
-import { glWriteoffPerPeriodAmount } from '../utils';
+import { buildGlWriteoffSchedule, glWriteoffPerPeriodAmount } from '../utils';
 import {
   DownloadIcon,
   SearchIcon,
@@ -29,6 +29,13 @@ const PROCESS_FAIL_RATE = 0.1;
 
 function formatMoney(n) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// งวดที่ 1 อาจมีเศษทศนิยมสะสมอยู่ (ดู buildGlWriteoffSchedule) จึงต้องอ้างอิงยอดจากงวดที่กำลังจะตัดจริง
+// แทนการใช้ยอดต่องวดแบบเฉลี่ย (glWriteoffPerPeriodAmount) ซึ่งปัดเศษทิ้งเสมอ
+function nextInstallmentAmount(row) {
+  const schedule = buildGlWriteoffSchedule(row.totalAmount, row.installments, row.startPeriod);
+  return schedule[row.installmentsPaid]?.amount ?? glWriteoffPerPeriodAmount(row.totalAmount, row.installments);
 }
 
 function periodLabel(period) {
@@ -388,7 +395,7 @@ export default function GlWriteoffMonthlyPage({ data, onView, onProcessBatch }) 
                       <td>
                         {row.installmentsPaid}/{row.installments}
                       </td>
-                      <td>{formatMoney(glWriteoffPerPeriodAmount(row.totalAmount, row.installments))}</td>
+                      <td>{formatMoney(nextInstallmentAmount(row))}</td>
                       <td className="ft-table-status-col">
                         <div className="glw-status-cell">
                           <StatusBadge value="รอดำเนินการตัดบัญชี" />

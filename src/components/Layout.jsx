@@ -15,8 +15,6 @@ import {
   FinanceIcon,
   SettingsIcon,
   LogoutIcon,
-  SunIcon,
-  MoonIcon,
 } from '../icons';
 
 const LEDGER_CHILDREN = [
@@ -41,7 +39,7 @@ const MANAGE_CHILDREN = [
 ];
 
 export default function Layout({ activeKey, onNavigate, onLogoutClick, children }) {
-  const { language, setLanguage, theme, toggleTheme, company, setCompany, pushToast, t, tv } = useApp();
+  const { language, setLanguage, company, setCompany, pushToast, t, tv } = useApp();
   const [ledgerExpanded, setLedgerExpanded] = useState(true);
   const [glWriteoffExpanded, setGlWriteoffExpanded] = useState(true);
   const [manageExpanded, setManageExpanded] = useState(true);
@@ -174,14 +172,6 @@ export default function Layout({ activeKey, onNavigate, onLogoutClick, children 
             )}
           </div>
 
-          <button
-            className="ft-icon-btn"
-            onClick={toggleTheme}
-            title={theme === 'dark' ? t('สลับเป็นโหมดสว่าง') : t('สลับเป็นโหมดมืด')}
-          >
-            {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-          </button>
-
           <div className="ft-user-profile">
             <div className="ft-avatar">
               <PersonAvatarIcon />
@@ -256,7 +246,7 @@ export default function Layout({ activeKey, onNavigate, onLogoutClick, children 
                 {glWriteoffExpanded && (
                   <>
                     {[
-                      ['gl-writeoff-create', 'จัดการรายการตัดบัญชี'],
+                      ['gl-writeoff-create', 'จัดการรายการบัญชีประจำ'],
                       ['gl-writeoff-list', 'รายการตัดบัญชี'],
                     ].map(([key, label]) => (
                       <div

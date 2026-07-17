@@ -1,0 +1,16 @@
+{
+  "phrases": {
+    "บรรทัดรายงาน": "Report Line",
+    "เพิ่มบรรทัดรายงาน": "Add Report Line",
+    "ค้นหาด้วย รหัสบรรทัด หรือ ชื่อบรรทัดรายงาน": "Search by line code or report line name",
+    "รหัสบรรทัด": "Line Code",
+    "ชื่อบรรทัดรายงาน": "Report Line Name",
+    "ลำดับ": "Order",
+    "รายได้จากการขาย": "Sales Revenue",
+    "ต้นทุนขาย": "Cost of Sales",
+    "ค่าใช้จ่ายในการบริหาร": "Administrative Expenses",
+    "RL01 - รายได้จากการขาย": "RL01 - Sales Revenue",
+    "RL02 - ต้นทุนขาย": "RL02 - Cost of Sales"
+  },
+  "templates": {}
+}

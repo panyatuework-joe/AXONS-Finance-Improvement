@@ -832,6 +832,15 @@ th.ft-table-action-col {
   cursor: pointer;
 }
 
+.ft-action-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.ft-action-btn:disabled:hover {
+  background: transparent;
+}
+
 .ft-action-btn:hover {
   background: var(--color-surface-level00);
 }
@@ -876,7 +885,9 @@ th.ft-table-action-col {
 .status-badge--ok { background: var(--color-success-container); color: var(--color-success-default); }
 .status-badge--warn { background: var(--color-warning-container); color: var(--color-warning-default); }
 .status-badge--bad { background: var(--color-error-container); color: var(--color-error-default); }
+.status-badge--spare { background: var(--color-error-spare-container); color: var(--color-error-spare-default); }
 .status-badge--neutral { background: var(--color-surface-level00); color: var(--color-text-light); }
+.status-badge--neutral-strong { background: var(--color-neutral-container); color: var(--color-text-normal); }
 
 /* ===== PAGINATION ===== */
 .ft-pagination {
@@ -2920,6 +2931,12 @@ th.ft-table-action-col {
   margin: -8px 0 16px;
 }
 
+.glw-schedule-diff-note {
+  font-size: var(--fs-hint-3);
+  color: var(--color-text-light);
+  margin-right: 8px;
+}
+
 .glw-char-count {
   align-self: flex-end;
   font-size: var(--fs-hint-3);
@@ -2987,6 +3004,7 @@ th.ft-table-action-col {
 
 .glw-line-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
 }
 
@@ -3014,22 +3032,25 @@ th.ft-table-action-col {
 }
 
 .glw-total-row td {
+  background: var(--color-primary-on-default);
   border-bottom: none;
   padding-top: 12px;
 }
 
-.glw-total-label {
+.glw-line-table td.glw-total-label {
   text-align: right;
-  font-size: var(--fs-label-5);
+  font-size: var(--fs-title-5);
+  line-height: 24px;
   font-weight: var(--fw-semibold);
-  color: var(--color-link-normal);
+  color: var(--color-info-default);
 }
 
-.glw-total-amount {
+.glw-line-table td.glw-total-amount {
   text-align: right;
-  font-size: var(--fs-body-4);
-  font-weight: var(--fw-bold);
-  color: var(--color-link-normal);
+  font-size: var(--fs-title-5);
+  line-height: 24px;
+  font-weight: var(--fw-semibold);
+  color: var(--color-info-default);
   white-space: nowrap;
 }
 
@@ -3124,6 +3145,11 @@ th.ft-table-action-col {
   color: var(--color-success-default);
 }
 
+.glwd-status-chip .status-badge--spare {
+  background: var(--color-error-spare-container);
+  color: var(--color-error-spare-default);
+}
+
 .glwd-status-banner {
   display: flex;
   align-items: center;
@@ -3173,11 +3199,6 @@ th.ft-table-action-col {
 
 .glwd-view .glw-section-subtitle {
   color: var(--color-neutral-default);
-}
-
-.glwd-view .glw-total-label,
-.glwd-view .glw-total-amount {
-  color: var(--color-info-default);
 }
 
 .glwd-file-header-divider {

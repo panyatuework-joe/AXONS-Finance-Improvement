@@ -22,7 +22,7 @@ function formatMoney(n) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-const STATUS_OPTIONS = ['ระหว่างดำเนินการ', 'หยุดชั่วคราว', 'ยกเลิก', 'จ่ายครบแล้ว'];
+const STATUS_OPTIONS = ['ระหว่างดำเนินการ', 'แบบร่าง', 'หยุดชั่วคราว', 'ยกเลิก', 'เสร็จสิ้น'];
 
 export default function GlWriteoffListPage({ data, onCreate, onView, onImportClick }) {
   const { pushToast, t, tv } = useApp();
@@ -44,7 +44,12 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
     let rows = data.filter((row) => {
       if (appliedStatuses.length > 0 && !appliedStatuses.includes(row.status)) return false;
       if (appliedCategories.length > 0 && !appliedCategories.includes(row.category)) return false;
-      if (search.trim() && !row.code.toLowerCase().includes(search.trim().toLowerCase())) return false;
+      if (search.trim()) {
+        const q = search.trim().toLowerCase();
+        const matchesCode = row.code.toLowerCase().includes(q);
+        const matchesDescription = t(row.description).toLowerCase().includes(q);
+        if (!matchesCode && !matchesDescription) return false;
+      }
       return true;
     });
     if (sortKey) {
@@ -56,7 +61,7 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
       });
     }
     return rows;
-  }, [data, search, sortKey, sortAsc, appliedStatuses, appliedCategories]);
+  }, [data, search, sortKey, sortAsc, appliedStatuses, appliedCategories, t]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageClamped = Math.min(page, totalPages);
@@ -124,7 +129,7 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
   return (
     <>
       <div className="ft-page-header">
-        <h1 className="ft-page-title">{t('จัดการรายการตัดบัญชี')}</h1>
+        <h1 className="ft-page-title">{t('จัดการรายการบัญชีประจำ')}</h1>
         <div className="ft-header-buttons">
           <button className="ft-btn-outline" onClick={handleDownload}>
             <DownloadIcon />
@@ -132,11 +137,11 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
           </button>
           <button className="ft-btn-outline" onClick={onImportClick}>
             <FileImportIcon />
-            {t('นำเข้าไฟล์รายการตัดบัญชี')}
+            {t('นำเข้าไฟล์รายการบัญชีประจำ')}
           </button>
           <button className="ft-btn-primary" onClick={onCreate}>
             <PlusIcon />
-            {t('สร้างรายการตัดบัญชี')}
+            {t('สร้างรายการบัญชีประจำ')}
           </button>
         </div>
       </div>
@@ -152,7 +157,7 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              placeholder={t('ค้นหาด้วย รหัสรายการตัดบัญชี')}
+              placeholder={t('ค้นหาด้วย รหัส หรือ รายละเอียด')}
             />
           </div>
           <button
@@ -215,7 +220,7 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
                   <tr>
                     {(
                       [
-                        ['code', 'รหัสรายการตัดบัญชี'],
+                        ['code', 'รหัส'],
                         ['description', 'รายละเอียด'],
                         ['company', 'บริษัท'],
                         ['dept', 'หน่วยงานหลัก'],
@@ -239,7 +244,7 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
                     <th>{t('ความคืบหน้า')}</th>
                     {(
                       [
-                        ['startDate', 'วันที่เริ่มตัดบัญชี'],
+                        ['startDate', 'วันที่เริ่มดำเนินการ'],
                         ['createdBy', 'ผู้สร้าง'],
                         ['createdAt', 'วันที่สร้าง'],
                       ]

@@ -14,7 +14,8 @@ import { useApp } from '../context/AppContext';
 import Combobox from '../components/Combobox';
 import Dialog from '../components/Dialog';
 import EmptyState from '../components/EmptyState';
-import { buildGlWriteoffSchedule, formatWholeAmount, glWriteoffPerPeriodAmount } from '../utils';
+import Pagination from '../components/Pagination';
+import { buildGlWriteoffSchedule, glWriteoffPerPeriodAmount } from '../utils';
 import {
   ChevronBreadcrumbIcon,
   CheckCircleSolidIcon,
@@ -27,10 +28,13 @@ import {
   RetryIcon,
 } from '../icons';
 
+const PAYMENT_FREQUENCY_OPTIONS = ['รายเดือน', 'รายไตรมาส', 'รายปี'];
 const MAX_UPLOAD_SIZE_BYTES = 25 * 1024 * 1024;
 const ACCEPTED_UPLOAD_EXTENSIONS = ['pdf', 'xlsx', 'png', 'jpg', 'jpeg'];
 const UPLOAD_FAIL_RATE = 0.1;
 const UPLOAD_SETTLE_MS = 3000;
+const ACCOUNT_LINES_PAGE_SIZE = 10;
+const MIN_ACCOUNT_LINES = 2;
 
 function formatMoney(n) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -56,9 +60,17 @@ function fileExtension(name) {
 }
 
 let lineIdCounter = 0;
-function newLine(accountCode) {
+function newLine({ accountCode = '', locked = null } = {}) {
   lineIdCounter += 1;
-  return { id: `glw-line-${Date.now()}-${lineIdCounter}`, dept: '', accountCode, cvCode: '', amount: 0 };
+  return {
+    id: `glw-line-${Date.now()}-${lineIdCounter}`,
+    dept: '',
+    accountCode,
+    cvCode: '',
+    debitAmount: 0,
+    creditAmount: 0,
+    locked,
+  };
 }
 
 let uploadIdCounter = 0;
@@ -80,10 +92,14 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
   const [totalAmount, setTotalAmount] = useState('');
   const [installments, setInstallments] = useState('');
   const [startPeriod, setStartPeriod] = useState('');
+  const [paymentFrequency, setPaymentFrequency] = useState(PAYMENT_FREQUENCY_OPTIONS[0]);
   const [files, setFiles] = useState([]);
-  const [debitLines, setDebitLines] = useState([newLine(GL_ACCOUNT_CODE_OPTIONS[0])]);
-  const [creditLines, setCreditLines] = useState([newLine(GL_ACCOUNT_CODE_OPTIONS[1])]);
+  const [lines, setLines] = useState([
+    newLine({ accountCode: GL_ACCOUNT_CODE_OPTIONS[0], locked: 'debit' }),
+    newLine({ accountCode: GL_ACCOUNT_CODE_OPTIONS[1], locked: 'credit' }),
+  ]);
   const [dirty, setDirty] = useState(false);
+  const [linesPage, setLinesPage] = useState(1);
 
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
   const [leaveWarningOpen, setLeaveWarningOpen] = useState(false);
@@ -102,17 +118,31 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
 
   const perPeriodAmount = glWriteoffPerPeriodAmount(totalNum, installmentsNum);
 
-  // ยอดบัญชีเดบิต/เครดิตล็อกตามยอดตัดบัญชีต่อเดือน (งวดที่ 2 เป็นต้นไป) เสมอ
+  // แถวที่ระบบสร้างอัตโนมัติ (locked) ล็อกยอดตามยอดตัดบัญชีต่อเดือน (งวดที่ 2 เป็นต้นไป) เสมอ
+  // ส่วนแถวที่ผู้ใช้กดเพิ่มเองกรอกยอดเดบิต/เครดิตได้อิสระ
   useEffect(() => {
-    setDebitLines((prev) => prev.map((l) => ({ ...l, amount: perPeriodAmount })));
-    setCreditLines((prev) => prev.map((l) => ({ ...l, amount: perPeriodAmount })));
+    setLines((prev) =>
+      prev.map((l) => {
+        if (l.locked === 'debit') return { ...l, debitAmount: perPeriodAmount };
+        if (l.locked === 'credit') return { ...l, creditAmount: perPeriodAmount };
+        return l;
+      }),
+    );
   }, [perPeriodAmount]);
 
-  const debitTotal = debitLines.reduce((sum, l) => sum + l.amount, 0);
-  const creditTotal = creditLines.reduce((sum, l) => sum + l.amount, 0);
+  const debitTotal = lines.reduce((sum, l) => sum + l.debitAmount, 0);
+  const creditTotal = lines.reduce((sum, l) => sum + l.creditAmount, 0);
 
-  const linesValid = (lines) =>
-    lines.length > 0 && lines.every((l) => l.dept && l.accountCode && l.cvCode && l.amount > 0);
+  const linesValid =
+    lines.length > 0 &&
+    lines.every((l) => l.dept && l.accountCode && l.cvCode && (l.debitAmount > 0 || l.creditAmount > 0));
+
+  const linesTotalPages = Math.max(1, Math.ceil(lines.length / ACCOUNT_LINES_PAGE_SIZE));
+  const linesPageClamped = Math.min(linesPage, linesTotalPages);
+  const pageLines = lines.slice(
+    (linesPageClamped - 1) * ACCOUNT_LINES_PAGE_SIZE,
+    linesPageClamped * ACCOUNT_LINES_PAGE_SIZE,
+  );
 
   // ต้องกรอก "ข้อมูลการตัดบัญชี" ให้ครบก่อน ถึงจะแสดง "ข้อมูลบัญชี" และ "รายละเอียดการตัดบัญชีรายงวด"
   const accountInfoValid =
@@ -122,11 +152,12 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
     !!category &&
     description.trim().length > 0 &&
     totalNum > 0 &&
+    !!paymentFrequency &&
     installmentsNum > 0 &&
     !!startPeriod;
 
   const hasUploadingFiles = files.some((f) => f.status === 'uploading');
-  const formValid = accountInfoValid && linesValid(debitLines) && linesValid(creditLines);
+  const formValid = accountInfoValid && linesValid;
 
   useEffect(() => {
     return () => {
@@ -213,16 +244,22 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
     setFiles((prev) => prev.filter((f) => f.id !== id));
   }
 
-  function updateLine(kind, id, patch) {
-    const update = (lines) => lines.map((l) => (l.id === id ? { ...l, ...patch } : l));
-    if (kind === 'debit') setDebitLines(update);
-    else setCreditLines(update);
+  function updateLine(id, patch) {
+    setLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
     markDirty();
   }
 
-  function addLinePair() {
-    setDebitLines((prev) => [...prev, { ...newLine(GL_ACCOUNT_CODE_OPTIONS[0]), amount: perPeriodAmount }]);
-    setCreditLines((prev) => [...prev, { ...newLine(GL_ACCOUNT_CODE_OPTIONS[1]), amount: perPeriodAmount }]);
+  function addLine() {
+    setLines((prev) => {
+      const next = [...prev, newLine({})];
+      setLinesPage(Math.ceil(next.length / ACCOUNT_LINES_PAGE_SIZE));
+      return next;
+    });
+    markDirty();
+  }
+
+  function removeLine(id) {
+    setLines((prev) => prev.filter((l) => l.id !== id));
     markDirty();
   }
 
@@ -242,6 +279,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
       category,
       description: description.trim(),
       totalAmount: totalNum,
+      paymentFrequency,
       installments: installmentsNum,
       installmentsPaid: 0,
       startPeriod,
@@ -249,8 +287,12 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
       createdBy: 'สิริศักดิ์ หงษ์พัตรา',
       createdAt: new Date().toLocaleDateString('en-GB'),
       status: 'ระหว่างดำเนินการ',
-      debitLines,
-      creditLines,
+      debitLines: lines
+        .filter((l) => l.debitAmount > 0)
+        .map((l) => ({ id: l.id, dept: l.dept, accountCode: l.accountCode, cvCode: l.cvCode, amount: l.debitAmount })),
+      creditLines: lines
+        .filter((l) => l.creditAmount > 0)
+        .map((l) => ({ id: l.id, dept: l.dept, accountCode: l.accountCode, cvCode: l.cvCode, amount: l.creditAmount })),
       files: files.filter((f) => f.status === 'success').map((f) => f.name),
     };
   }
@@ -271,21 +313,36 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
     else onCancel();
   }
 
-  function renderAccountTable() {
-    const rows = [
-      ...debitLines.map((l) => ({ ...l, side: 'debit' })),
-      ...creditLines.map((l) => ({ ...l, side: 'credit' })),
-    ];
+  function renderAccountAmountInput(line, field, updateOnChange) {
     return (
-      <div className="glw-line-table-wrapper">
-        <table className="glw-line-table">
+      <div className="aft-input-group">
+        <input
+          type="text"
+          inputMode="decimal"
+          className="aft-input-amount"
+          style={{ textAlign: 'right' }}
+          value={line[field] || ''}
+          placeholder="0.00"
+          onChange={(e) => updateOnChange(parseFloat(sanitizeNumericInput(e.target.value)) || 0)}
+        />
+        <span className="aft-input-unit">THB</span>
+      </div>
+    );
+  }
+
+  function renderAccountTable() {
+    return (
+      <>
+        <div className="glw-line-table-wrapper">
+          <table className="glw-line-table glw-account-table" style={{ minWidth: '1112px' }}>
           <colgroup>
             <col style={{ width: '56px' }} />
-            <col style={{ width: '220px' }} />
-            <col style={{ width: '180px' }} />
-            <col />
-            <col style={{ width: '160px' }} />
-            <col style={{ width: '160px' }} />
+            <col style={{ width: '200px' }} />
+            <col style={{ width: '200px' }} />
+            <col style={{ width: '200px' }} />
+            <col style={{ width: '200px' }} />
+            <col style={{ width: '200px' }} />
+            <col style={{ width: '56px' }} />
           </colgroup>
           <thead>
             <tr>
@@ -299,18 +356,23 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
               <th>
                 {t('รหัส CV')} <span className="aft-required">*</span>
               </th>
-              <th className="glw-col-amount">{t('เดบิต (THB)')}</th>
-              <th className="glw-col-amount">{t('เครดิต (THB)')}</th>
+              <th className="glw-col-amount">
+                {t('เดบิต (THB)')} <span className="aft-required">*</span>
+              </th>
+              <th className="glw-col-amount">
+                {t('เครดิต (THB)')} <span className="aft-required">*</span>
+              </th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((line, i) => (
+            {pageLines.map((line, i) => (
               <tr key={line.id}>
-                <td>{i + 1}</td>
+                <td>{(linesPageClamped - 1) * ACCOUNT_LINES_PAGE_SIZE + i + 1}</td>
                 <td>
                   <Combobox
                     value={line.dept}
-                    onChange={(v) => updateLine(line.side, line.id, { dept: v })}
+                    onChange={(v) => updateLine(line.id, { dept: v })}
                     options={UL_DEPT_OPTIONS.map((d) => ({ value: d, label: t(d) }))}
                     placeholder={t('กรุณาเลือก')}
                   />
@@ -318,7 +380,12 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                 <td>
                   <Combobox
                     value={line.accountCode}
-                    onChange={(v) => updateLine(line.side, line.id, { accountCode: v })}
+                    onChange={(v) => {
+                      const patch = { accountCode: v };
+                      if (v === GL_ACCOUNT_CODE_OPTIONS[0]) patch.creditAmount = 0;
+                      else if (v === GL_ACCOUNT_CODE_OPTIONS[1]) patch.debitAmount = 0;
+                      updateLine(line.id, patch);
+                    }}
                     options={GL_ACCOUNT_CODE_OPTIONS.map((a) => ({ value: a, label: t(a) }))}
                     placeholder={t('กรุณาเลือก')}
                   />
@@ -326,25 +393,40 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                 <td>
                   <Combobox
                     value={line.cvCode}
-                    onChange={(v) => updateLine(line.side, line.id, { cvCode: v })}
+                    onChange={(v) => updateLine(line.id, { cvCode: v })}
                     options={CV_OPTIONS.map((c) => ({ value: c, label: t(c) }))}
                     placeholder={t('กรุณาเลือก')}
                     searchable
                   />
                 </td>
                 <td className="glw-col-amount">
-                  {line.side === 'debit' ? (
-                    <span className="glw-account-amount-box">{formatWholeAmount(line.amount)} THB</span>
-                  ) : (
+                  {line.locked === 'debit' ? (
+                    <span className="glw-account-amount-box">{formatMoney(line.debitAmount)} THB</span>
+                  ) : line.locked === 'credit' || line.accountCode === GL_ACCOUNT_CODE_OPTIONS[1] ? (
                     <span className="glw-account-amount-box glw-account-amount-box--disabled">0.00 THB</span>
+                  ) : (
+                    renderAccountAmountInput(line, 'debitAmount', (v) => updateLine(line.id, { debitAmount: v }))
                   )}
                 </td>
                 <td className="glw-col-amount">
-                  {line.side === 'credit' ? (
-                    <span className="glw-account-amount-box">{formatWholeAmount(line.amount)} THB</span>
-                  ) : (
+                  {line.locked === 'credit' ? (
+                    <span className="glw-account-amount-box">{formatMoney(line.creditAmount)} THB</span>
+                  ) : line.locked === 'debit' || line.accountCode === GL_ACCOUNT_CODE_OPTIONS[0] ? (
                     <span className="glw-account-amount-box glw-account-amount-box--disabled">0.00 THB</span>
+                  ) : (
+                    renderAccountAmountInput(line, 'creditAmount', (v) => updateLine(line.id, { creditAmount: v }))
                   )}
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className="ft-action-btn"
+                    title={t('ลบ')}
+                    disabled={lines.length <= MIN_ACCOUNT_LINES}
+                    onClick={() => removeLine(line.id)}
+                  >
+                    <DeleteIcon color="var(--color-text-lighter)" size={24} />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -352,12 +434,23 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
               <td colSpan={4} className="glw-total-label">
                 {t('ยอดรวม')}
               </td>
-              <td className="glw-col-amount glw-total-amount">{formatWholeAmount(debitTotal)} THB</td>
-              <td className="glw-col-amount glw-total-amount">{formatWholeAmount(creditTotal)} THB</td>
+              <td className="glw-col-amount glw-total-amount">{formatMoney(debitTotal)} THB</td>
+              <td className="glw-col-amount glw-total-amount">{formatMoney(creditTotal)} THB</td>
+              <td></td>
             </tr>
           </tbody>
-        </table>
-      </div>
+          </table>
+        </div>
+        {lines.length > ACCOUNT_LINES_PAGE_SIZE && (
+          <Pagination
+            page={linesPageClamped}
+            totalPages={linesTotalPages}
+            totalItems={lines.length}
+            pageSize={ACCOUNT_LINES_PAGE_SIZE}
+            onPageChange={setLinesPage}
+          />
+        )}
+      </>
     );
   }
 
@@ -478,16 +571,16 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
       <div className="aft-page-header">
         <div className="aft-breadcrumb">
           <span className="aft-breadcrumb-link" onClick={handleBreadcrumbClick}>
-            {t('จัดการรายการตัดบัญชี')}
+            {t('จัดการรายการบัญชีประจำ')}
           </span>
           <ChevronBreadcrumbIcon />
-          <span className="aft-breadcrumb-current">{t('สร้างรายการตัดบัญชี')}</span>
+          <span className="aft-breadcrumb-current">{t('สร้างรายการบัญชีประจำ')}</span>
         </div>
-        <h1 className="aft-page-title">{t('สร้างรายการตัดบัญชี')}</h1>
+        <h1 className="aft-page-title">{t('สร้างรายการบัญชีประจำ')}</h1>
       </div>
 
       <div className="aft-card">
-        <div className="aft-section-title">{t('ข้อมูลการตัดบัญชี')}</div>
+        <div className="aft-section-title">{t('ข้อมูลบัญชีประจำ')}</div>
 
         <div className="aft-form-row glw-form-row-3">
           <div className="aft-form-field">
@@ -582,9 +675,9 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
             <label className="aft-form-label">
               {t('รายละเอียด')} <span className="aft-required">*</span>
             </label>
-            <input
-              type="text"
+            <textarea
               className="modal-input"
+              rows={3}
               value={description}
               maxLength={100}
               placeholder={t('กรุณากรอก')}
@@ -621,6 +714,20 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
               />
               <span className="aft-input-unit">THB</span>
             </div>
+          </div>
+          <div className="aft-form-field">
+            <label className="aft-form-label">
+              {t('ลักษณะการจ่าย')} <span className="aft-required">*</span>
+            </label>
+            <Combobox
+              value={paymentFrequency}
+              onChange={(v) => {
+                setPaymentFrequency(v);
+                markDirty();
+              }}
+              options={PAYMENT_FREQUENCY_OPTIONS.map((f) => ({ value: f, label: t(f) }))}
+              placeholder={t('กรุณาเลือก')}
+            />
           </div>
           <div className="aft-form-field">
             <label className="aft-form-label">
@@ -695,7 +802,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
         {!accountInfoValid ? (
           <>
             <div className="aft-section-title">{t('ข้อมูลบัญชี')}</div>
-            <EmptyState title="ไม่มีข้อมูล" message="กรุณากรอกข้อมูลการตัดบัญชีให้ครบถ้วนก่อน" />
+            <EmptyState title={t('ไม่มีข้อมูล')} message={t('กรุณากรอกข้อมูลบัญชีประจำให้ครบถ้วนก่อน')} />
           </>
         ) : (
           <>
@@ -705,10 +812,10 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                   {t('ข้อมูลบัญชี')}
                 </div>
                 <div className="glw-section-subtitle">
-                  {t('ระบบคำนวณยอดเดบิตและเครดิตเริ่มต้นจากยอดรวมทั้งสัญญา ออกมาเป็นยอดตัดบัญชีต่อเดือน')}
+                  {t('ระบบคำนวณยอดเดบิตและเครดิตเริ่มต้นจากยอดรวมทั้งสัญญา ออกมาเป็นยอดบัญชีประจำต่อเดือน')}
                 </div>
               </div>
-              <button type="button" className="ft-btn-outline glw-add-line-btn" onClick={addLinePair}>
+              <button type="button" className="ft-btn-outline glw-add-line-btn" onClick={addLine}>
                 <PlusIcon color="var(--color-primary-default)" />
                 {t('เพิ่ม')}
               </button>
@@ -718,7 +825,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
             <div className="glw-section-header">
               <div>
                 <div className="aft-section-title" style={{ marginBottom: 0 }}>
-                  {t('รายละเอียดการตัดบัญชีรายงวด')}
+                  {t('รายละเอียดบัญชีประจำรายงวด')}
                 </div>
                 <div className="glw-section-subtitle">
                   {t('ระบบคำนวณยอดตัดบัญชีอัตโนมัติ')}{' '}
@@ -731,7 +838,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
             </div>
 
             <div className="glw-line-table-wrapper">
-              <table className="glw-line-table glw-schedule-table">
+              <table className="glw-line-table glw-schedule-table" style={{ minWidth: '640px' }}>
                 <colgroup>
                   <col style={{ width: '160px' }} />
                   <col />
@@ -751,7 +858,17 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                         {row.seq}/{schedule.length}
                       </td>
                       <td>{row.date}</td>
-                      <td className="glw-col-amount">{formatMoney(row.amount)} THB</td>
+                      <td className="glw-col-amount">
+                        {row.seq === 1 && row.amount !== perPeriodAmount && (
+                          <span className="glw-schedule-diff-note">
+                            {tv('ยอดส่วนต่าง {diff} THB จะถูกนำไปบันทึกใน {dept}', {
+                              diff: (row.amount - perPeriodAmount).toFixed(2),
+                              dept: dept ? t(dept) : '-',
+                            })}
+                          </span>
+                        )}
+                        {formatMoney(row.amount)} THB
+                      </td>
                     </tr>
                   ))}
                   <tr className="glw-total-row">
@@ -769,6 +886,9 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
         <div className="aft-actions">
           <button className="ft-btn-outline" onClick={() => setConfirmCancelOpen(true)}>
             {t('ยกเลิก')}
+          </button>
+          <button className="ft-btn-outline" onClick={() => {}}>
+            {t('บันทึกร่าง')}
           </button>
           <button
             className="aft-btn-add"

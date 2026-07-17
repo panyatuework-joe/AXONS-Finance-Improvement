@@ -1,0 +1,31 @@
+{
+  "phrases": {
+    "กลุ่มบัญชี": "Account Group",
+    "เพิ่มกลุ่มบัญชี": "Add Account Group",
+    "ค้นหาด้วย รหัสกลุ่มบัญชี หรือ ชื่อกลุ่มบัญชี": "Search by account group code or name",
+    "รหัสกลุ่มบัญชี": "Account Group Code",
+    "ชื่อกลุ่มบัญชี": "Account Group Name",
+    "สินทรัพย์": "Assets",
+    "หนี้สิน": "Liabilities",
+    "ส่วนของผู้ถือหุ้น": "Equity",
+    "รายได้": "Revenue",
+    "ค่าใช้จ่าย": "Expenses",
+    "สร้างกลุ่มบัญชี": "Create Account Group",
+    "แก้ไขกลุ่มบัญชี": "Edit Account Group",
+    "รายละเอียดกลุ่มบัญชี": "Account Group Details",
+    "อนุญาตให้ปรับปรุง": "Allow Edit",
+    "ยกยอดระหว่างปี": "Carry Forward During Year",
+    "คุณต้องการลบกลุ่มบัญชีนี้ใช่ไหม?": "Are you sure you want to delete this account group?",
+    "ลบกลุ่มบัญชีสำเร็จ!": "Account group deleted successfully!",
+    "สร้างกลุ่มบัญชีสำเร็จ!": "Account group created successfully!",
+    "บันทึกกลุ่มบัญชีสำเร็จ!": "Account group saved successfully!",
+    "สินทรัพย์หมุนเวียน": "Current Assets",
+    "หนี้สินหมุนเวียน": "Current Liabilities",
+    "ทุนเรือนหุ้น": "Share Capital",
+    "AG01 - สินทรัพย์หมุนเวียน": "AG01 - Current Assets",
+    "AG02 - หนี้สินหมุนเวียน": "AG02 - Current Liabilities"
+  },
+  "templates": {
+    "ชื่อกลุ่มบัญชี ({lang})": "Account Group Name ({lang})"
+  }
+}

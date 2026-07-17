@@ -1,0 +1,17 @@
+{
+  "phrases": {
+    "รายงาน": "Reports",
+    "เพิ่มรายงาน": "Add Report",
+    "ค้นหาด้วย ชื่อรายงาน": "Search by report name",
+    "ชื่อรายงาน": "Report Name",
+    "ประเภทรายงาน": "Report Type",
+    "งบกำไรขาดทุน": "Income Statement",
+    "งบแสดงฐานะการเงิน": "Statement of Financial Position",
+    "งบกระแสเงินสด": "Cash Flow Statement",
+    "รอบบัญชี": "Accounting Period",
+    "งบกำไรขาดทุนประจำเดือน ม.ค. 2026": "Income Statement - Jan 2026",
+    "งบแสดงฐานะการเงิน Q1 2026": "Statement of Financial Position - Q1 2026",
+    "งบกระแสเงินสดประจำปี 2025": "Cash Flow Statement - FY2025"
+  },
+  "templates": {}
+}

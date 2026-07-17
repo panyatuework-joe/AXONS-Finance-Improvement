@@ -4,7 +4,6 @@ import { COMPANY_OPTIONS } from '../data';
 import { translate, translateVars } from '../i18n';
 
 const LANGUAGE_STORAGE_KEY = 'axons-language';
-const THEME_STORAGE_KEY = 'axons-theme';
 
 const AppContext = createContext(null);
 
@@ -12,10 +11,6 @@ export function AppProvider({ children }) {
   const [language, setLanguage] = useState(() => {
     const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
     return stored === 'EN' || stored === 'TH' ? stored : 'TH';
-  });
-  const [theme, setTheme] = useState(() => {
-    const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    return stored === 'dark' ? 'dark' : 'light';
   });
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [company, setCompany] = useState(COMPANY_OPTIONS[0]);
@@ -25,15 +20,6 @@ export function AppProvider({ children }) {
   useEffect(() => {
     localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
   }, [language]);
-
-  useEffect(() => {
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  const toggleTheme = useCallback(() => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  }, []);
 
   const t = useCallback((text) => translate(text, language), [language]);
   const tv = useCallback(
@@ -98,8 +84,6 @@ export function AppProvider({ children }) {
       value={{
         language,
         setLanguage,
-        theme,
-        toggleTheme,
         notificationsEnabled,
         setNotificationsEnabled,
         company,
