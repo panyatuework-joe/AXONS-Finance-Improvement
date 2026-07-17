@@ -22,7 +22,7 @@ function formatMoney(n) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-const STATUS_OPTIONS = ['ระหว่างดำเนินการ', 'แบบร่าง', 'หยุดชั่วคราว', 'ยกเลิก', 'เสร็จสิ้น'];
+const STATUS_OPTIONS = ['ระหว่างดำเนินการ', 'แบบร่าง', 'หยุดชั่วคราว', 'ยกเลิก', 'จ่ายครบแล้ว'];
 
 export default function GlWriteoffListPage({ data, onCreate, onView, onImportClick }) {
   const { pushToast, t, tv } = useApp();

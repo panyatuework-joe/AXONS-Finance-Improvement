@@ -205,7 +205,10 @@ const GL_WRITEOFF_SEED = [
   { description: 'ค่าธรรมเนียมการติดตั้งระบบครั้งแรก', dept: '06 - HarvestBoost Solutions', category: 'จ่ายล่วงหน้า', totalAmount: 560300, installments: 3, installmentsPaid: 1, status: 'ระหว่างดำเนินการ' },
   { description: 'ค่าบริการฝึกอบรมผู้ใช้งาน', dept: '07 - EcoBloom Nutrients', category: 'จ่ายล่วงหน้า', totalAmount: 1200000, installments: 12, installmentsPaid: 9, status: 'ระหว่างดำเนินการ' },
   { description: 'ค่าบริการสำรองข้อมูลและกู้คืนระบบ', dept: '08 - GreenGrow Fertilizers', category: 'รับล่วงหน้า', totalAmount: 870450, installments: 12, installmentsPaid: 6, status: 'หยุดชั่วคราว' },
-  { description: 'ค่าโฆษณาออนไลน์จ่ายล่วงหน้า ไตรมาส 3/2569', dept: '09 - AgriMax Fertilizers', category: 'จ่ายล่วงหน้า', totalAmount: 615000, installments: 12, installmentsPaid: 12, status: 'เสร็จสิ้น' },
+  { description: 'ค่าโฆษณาออนไลน์จ่ายล่วงหน้า ไตรมาส 3/2569', dept: '09 - AgriMax Fertilizers', category: 'จ่ายล่วงหน้า', totalAmount: 615000, installments: 12, installmentsPaid: 12, status: 'จ่ายครบแล้ว' },
+  { description: 'ค่าเบี้ยประกันรถยนต์บริษัทจ่ายล่วงหน้า 1 ปี', dept: '00 - สำนักงานใหญ่', category: 'จ่ายล่วงหน้า', totalAmount: 96000, installments: 12, installmentsPaid: 12, status: 'จ่ายครบแล้ว' },
+  { description: 'ค่าสมาชิกฐานข้อมูลวิจัยตลาดรับล่วงหน้า (License 1 ปี)', dept: '01 - Corn Seed R&D Business', category: 'รับล่วงหน้า', totalAmount: 264000, installments: 6, installmentsPaid: 6, status: 'จ่ายครบแล้ว' },
+  { description: 'ค่าเช่าคลังสินค้าสาขาระยอง จ่ายล่วงหน้า 6 เดือน', dept: '04 - Corn Seed Business', category: 'จ่ายล่วงหน้า', totalAmount: 342000, installments: 6, installmentsPaid: 6, status: 'จ่ายครบแล้ว' },
 ];
 
 export function seedGlWriteoffEntries() {

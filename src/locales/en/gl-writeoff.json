@@ -33,7 +33,7 @@
     "รายการตัดบัญชี.csv": "Write-off_Entries.csv",
     "ระหว่างดำเนินการ": "In Progress",
     "หยุดชั่วคราว": "Paused",
-    "เสร็จสิ้น": "Completed",
+    "จ่ายครบแล้ว": "Fully Paid",
     "แบบร่าง": "Draft",
     "วันที่เริ่มดำเนินการ": "Start Date",
     "คุณต้องการลบรายการตัดบัญชีนี้ใช่ไหม?": "Are you sure you want to delete this write-off entry?",
