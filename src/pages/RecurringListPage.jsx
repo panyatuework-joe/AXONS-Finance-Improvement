@@ -22,9 +22,9 @@ function formatMoney(n) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-const STATUS_OPTIONS = ['ระหว่างดำเนินการ', 'แบบร่าง', 'หยุดชั่วคราว', 'ยกเลิก', 'จ่ายครบแล้ว'];
+const STATUS_OPTIONS = ['ระหว่างดำเนินการ', 'ฉบับร่าง', 'ยกเลิก', 'เสร็จสิ้น'];
 
-export default function GlWriteoffListPage({ data, onCreate, onView, onImportClick }) {
+export default function RecurringListPage({ data, onCreate, onView, onImportClick }) {
   const { pushToast, t, tv } = useApp();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -39,6 +39,7 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
   const [draftCategories, setDraftCategories] = useState([]);
 
   const filterCount = appliedStatuses.length + appliedCategories.length;
+  const isTrulyEmpty = data.length === 0;
 
   const filtered = useMemo(() => {
     let rows = data.filter((row) => {
@@ -131,18 +132,22 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
       <div className="ft-page-header">
         <h1 className="ft-page-title">{t('จัดการรายการบัญชีประจำ')}</h1>
         <div className="ft-header-buttons">
-          <button className="ft-btn-outline" onClick={handleDownload}>
-            <DownloadIcon />
-            {t('ดาวน์โหลด')}
-          </button>
+          {!isTrulyEmpty && (
+            <button className="ft-btn-outline" onClick={handleDownload}>
+              <DownloadIcon />
+              {t('ดาวน์โหลด')}
+            </button>
+          )}
           <button className="ft-btn-outline" onClick={onImportClick}>
             <FileImportIcon />
             {t('นำเข้าไฟล์รายการบัญชีประจำ')}
           </button>
-          <button className="ft-btn-primary" onClick={onCreate}>
-            <PlusIcon />
-            {t('สร้างรายการบัญชีประจำ')}
-          </button>
+          {!isTrulyEmpty && (
+            <button className="ft-btn-primary" onClick={onCreate}>
+              <PlusIcon />
+              {t('สร้างรายการบัญชีประจำ')}
+            </button>
+          )}
         </div>
       </div>
 
@@ -197,7 +202,11 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
         )}
 
         {filtered.length === 0 ? (
-          <EmptyState />
+          isTrulyEmpty ? (
+            <EmptyState title="ไม่มีข้อมูล" message="" actionLabel={t('สร้างรายการบัญชีประจำ')} onAction={onCreate} />
+          ) : (
+            <EmptyState />
+          )
         ) : (
           <>
             <div className="ft-table-wrapper">
@@ -276,8 +285,8 @@ export default function GlWriteoffListPage({ data, onCreate, onView, onImportCli
                       <td>{row.createdBy}</td>
                       <td>{row.createdAt}</td>
                       <td className="ft-table-status-col">
-                        <div className="glw-status-cell">
-                          <StatusBadge value={row.status} />
+                        <div className="rec-status-cell">
+                          <StatusBadge value={row.status} variant={row.status === 'ฉบับร่าง' ? 'neutral-strong' : undefined} />
                           <button
                             className="ft-action-btn"
                             title={t('รายละเอียด')}

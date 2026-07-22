@@ -7,7 +7,7 @@ import EmptyState from '../components/EmptyState';
 import StatusBadge from '../components/StatusBadge';
 import MultiSelect from '../components/MultiSelect';
 import { THAI_MONTH_OPTIONS, START_PERIOD_OPTIONS } from '../data';
-import { buildGlWriteoffSchedule, glWriteoffPerPeriodAmount } from '../utils';
+import { buildRecurringSchedule, recurringPerPeriodAmount } from '../utils';
 import {
   DownloadIcon,
   SearchIcon,
@@ -22,20 +22,20 @@ import {
   ErrorCircleSolidIcon,
 } from '../icons';
 
-const ACTIVE_STATUSES = ['ระหว่างดำเนินการ', 'หยุดชั่วคราว'];
-const MONTH_STATUS_OPTIONS = ['รอดำเนินการตัดบัญชี'];
-const HISTORY_STATUS_OPTIONS = ['ตัดบัญชีสำเร็จ', 'ตัดบัญชีไม่สำเร็จ'];
+const ACTIVE_STATUSES = ['ระหว่างดำเนินการ'];
+const MONTH_STATUS_OPTIONS = ['รอดำเนินการ'];
+const HISTORY_STATUS_OPTIONS = ['สำเร็จ', 'ไม่สำเร็จ'];
 const PROCESS_FAIL_RATE = 0.1;
 
 function formatMoney(n) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// งวดที่ 1 อาจมีเศษทศนิยมสะสมอยู่ (ดู buildGlWriteoffSchedule) จึงต้องอ้างอิงยอดจากงวดที่กำลังจะตัดจริง
-// แทนการใช้ยอดต่องวดแบบเฉลี่ย (glWriteoffPerPeriodAmount) ซึ่งปัดเศษทิ้งเสมอ
+// งวดที่ 1 อาจมีเศษทศนิยมสะสมอยู่ (ดู buildRecurringSchedule) จึงต้องอ้างอิงยอดจากงวดที่กำลังจะตัดจริง
+// แทนการใช้ยอดต่องวดแบบเฉลี่ย (recurringPerPeriodAmount) ซึ่งปัดเศษทิ้งเสมอ
 function nextInstallmentAmount(row) {
-  const schedule = buildGlWriteoffSchedule(row.totalAmount, row.installments, row.startPeriod);
-  return schedule[row.installmentsPaid]?.amount ?? glWriteoffPerPeriodAmount(row.totalAmount, row.installments);
+  const schedule = buildRecurringSchedule(row.totalAmount, row.installments, row.startPeriod);
+  return schedule[row.installmentsPaid]?.amount ?? recurringPerPeriodAmount(row.totalAmount, row.installments);
 }
 
 function periodLabel(period) {
@@ -45,10 +45,10 @@ function periodLabel(period) {
 }
 
 function historyStatus(row) {
-  return row.status === 'ยกเลิก' ? 'ตัดบัญชีไม่สำเร็จ' : 'ตัดบัญชีสำเร็จ';
+  return row.status === 'ยกเลิก' ? 'ไม่สำเร็จ' : 'สำเร็จ';
 }
 
-export default function GlWriteoffMonthlyPage({ data, onView, onProcessBatch }) {
+export default function RecurringMonthlyPage({ data, onView, onProcessBatch, onProcessFailure }) {
   const { pushToast, t, tv } = useApp();
   const [tab, setTab] = useState('month');
   const [period, setPeriod] = useState(START_PERIOD_OPTIONS[0]);
@@ -78,7 +78,7 @@ export default function GlWriteoffMonthlyPage({ data, onView, onProcessBatch }) 
   const filtered = useMemo(() => {
     let rows = baseRows.filter((row) => {
       if (appliedStatuses.length > 0) {
-        const statusValue = tab === 'history' ? historyStatus(row) : 'รอดำเนินการตัดบัญชี';
+        const statusValue = tab === 'history' ? historyStatus(row) : 'รอดำเนินการ';
         if (!appliedStatuses.includes(statusValue)) return false;
       }
       const q = search.trim().toLowerCase();
@@ -146,7 +146,7 @@ export default function GlWriteoffMonthlyPage({ data, onView, onProcessBatch }) 
     const lines = [
       header.join(','),
       ...filtered.map((r) =>
-        [r.code, t(r.description), t(r.company), t(r.dept), tab === 'month' ? t('รอดำเนินการตัดบัญชี') : t(historyStatus(r))].map(escape).join(','),
+        [r.code, t(r.description), t(r.company), t(r.dept), tab === 'month' ? t('รอดำเนินการ') : t(historyStatus(r))].map(escape).join(','),
       ),
     ];
     const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
@@ -194,6 +194,7 @@ export default function GlWriteoffMonthlyPage({ data, onView, onProcessBatch }) 
       else succeeded.push(row);
     });
     if (succeeded.length > 0) onProcessBatch(succeeded);
+    if (failed.length > 0) onProcessFailure(failed);
     setProcessResult({ succeeded, failed });
     setSelectedIds(new Set());
     setResultOpen(true);
@@ -209,9 +210,9 @@ export default function GlWriteoffMonthlyPage({ data, onView, onProcessBatch }) 
   return (
     <>
       <div className="ft-page-header">
-        <h1 className="ft-page-title">{t('รายการตัดบัญชี')}</h1>
+        <h1 className="ft-page-title">{t('รายการรอดำเนินการ')}</h1>
         <div className="ft-header-buttons">
-          <div className="ft-year-select glw-period-select">
+          <div className="ft-year-select rec-period-select">
             <span className="ft-year-label">{t('งวดบัญชี')}</span>
             <Select
               value={period}
@@ -223,43 +224,37 @@ export default function GlWriteoffMonthlyPage({ data, onView, onProcessBatch }) 
               options={START_PERIOD_OPTIONS.map((p) => ({ value: p, label: periodLabel(p) }))}
             />
           </div>
-          <button className="ft-btn-outline" onClick={handleDownload}>
-            <DownloadIcon />
-            {t('ดาวน์โหลด')}
-          </button>
-          <button
-            className="ft-btn-primary"
-            onClick={() => {
-              if (selectedIds.size === 0) {
-                pushToast(t('กรุณาเลือกรายการตัดบัญชีที่ต้องการ'), 'error');
-                return;
-              }
-              setConfirmOpen(true);
-            }}
-          >
-            <FileDocIcon size={20} color="var(--color-base-white)" />
-            {t('ดำเนินการตัดบัญชี')}
-          </button>
+          {tab === 'month' && selectedIds.size > 0 ? (
+            <button className="ft-btn-primary" onClick={() => setConfirmOpen(true)}>
+              <FileDocIcon size={20} color="var(--color-base-white)" />
+              {tv('ดำเนินการ ({count})', { count: selectedIds.size })}
+            </button>
+          ) : (
+            <button className="ft-btn-outline" onClick={handleDownload}>
+              <DownloadIcon />
+              {t('ดาวน์โหลด')}
+            </button>
+          )}
         </div>
       </div>
 
       <div className="ft-content-card">
-        <div className="glw-tabs">
+        <div className="rec-tabs">
           <button
             type="button"
-            className={`glw-tab${tab === 'month' ? ' glw-tab--active' : ''}`}
+            className={`rec-tab${tab === 'month' ? ' rec-tab--active' : ''}`}
             onClick={() => switchTab('month')}
           >
             <FileDocIcon size={20} color={tab === 'month' ? 'var(--color-primary-default)' : 'var(--color-text-normal)'} />
-            {t('รายการตัดบัญชีเดือนนี้')}
+            {t('รายการรอดำเนินการประจำงวด')}
           </button>
           <button
             type="button"
-            className={`glw-tab${tab === 'history' ? ' glw-tab--active' : ''}`}
+            className={`rec-tab${tab === 'history' ? ' rec-tab--active' : ''}`}
             onClick={() => switchTab('history')}
           >
             <HistoryOutlineIcon color={tab === 'history' ? 'var(--color-primary-default)' : 'var(--color-text-normal)'} />
-            {t('ประวัติการตัดบัญชีทั้งหมด')}
+            {t('ประวัติดำเนินการทั้งหมด')}
           </button>
         </div>
 
@@ -273,7 +268,7 @@ export default function GlWriteoffMonthlyPage({ data, onView, onProcessBatch }) 
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              placeholder={t('ค้นหาด้วยรหัสรายการตัดบัญชี หรือ รายละเอียดการตัดบัญชี')}
+              placeholder={t('ค้นหาด้วย รหัส หรือ รายละเอียด')}
             />
           </div>
           <button
@@ -347,7 +342,7 @@ export default function GlWriteoffMonthlyPage({ data, onView, onProcessBatch }) 
                     </th>
                     <th onClick={() => handleSort('code')} style={{ cursor: 'pointer' }}>
                       <span className="sort-th-inner">
-                        {t('รหัสรายการตัดบัญชี')}
+                        {t('รหัส')}
                         {renderSortIcon('code')}
                       </span>
                     </th>
@@ -377,7 +372,7 @@ export default function GlWriteoffMonthlyPage({ data, onView, onProcessBatch }) 
                 </thead>
                 <tbody>
                   {pageRows.map((row) => (
-                    <tr key={row.id}>
+                    <tr key={row.id} className={selectedIds.has(row.id) ? 'pti-row--selected' : ''}>
                       <td className="ft-table-checkbox-col">
                         <input
                           type="checkbox"
@@ -397,8 +392,8 @@ export default function GlWriteoffMonthlyPage({ data, onView, onProcessBatch }) 
                       </td>
                       <td>{formatMoney(nextInstallmentAmount(row))}</td>
                       <td className="ft-table-status-col">
-                        <div className="glw-status-cell">
-                          <StatusBadge value="รอดำเนินการตัดบัญชี" />
+                        <div className="rec-status-cell">
+                          <StatusBadge value="รอดำเนินการ" />
                           <button className="ft-action-btn" title={t('รายละเอียด')} onClick={() => onView(row.id)}>
                             <ViewIcon />
                           </button>
@@ -442,7 +437,7 @@ export default function GlWriteoffMonthlyPage({ data, onView, onProcessBatch }) 
                   <tr>
                     <th onClick={() => handleSort('code')} style={{ cursor: 'pointer' }}>
                       <span className="sort-th-inner">
-                        {t('รหัสรายการตัดบัญชี')}
+                        {t('รหัส')}
                         {renderSortIcon('code')}
                       </span>
                     </th>
@@ -475,7 +470,7 @@ export default function GlWriteoffMonthlyPage({ data, onView, onProcessBatch }) 
                       </td>
                       <td>{row.startDate}</td>
                       <td className="ft-table-status-col">
-                        <div className="glw-status-cell">
+                        <div className="rec-status-cell">
                           <StatusBadge value={historyStatus(row)} />
                           <button className="ft-action-btn" title={t('รายละเอียด')} onClick={() => onView(row.id)}>
                             <ViewIcon />
@@ -541,12 +536,12 @@ export default function GlWriteoffMonthlyPage({ data, onView, onProcessBatch }) 
       <Dialog
         open={confirmOpen}
         variant="process"
-        title={t('คุณต้องการดำเนินการตัดบัญชีต่อไปนี้ใช่ไหม?')}
+        title={t('คุณต้องการดำเนินรายการบัญชีประจำต่อไปนี้ใช่ไหม?')}
         message={tv('ดำเนินการตัดบัญชีทั้งหมด {count} รายการ', { count: selectedRows.length })}
         onClose={() => setConfirmOpen(false)}
         actions={[
           { label: t('ยกเลิก'), variant: 'outline', onClick: () => setConfirmOpen(false) },
-          { label: t('ดำเนินการตัดบัญชี'), variant: 'primary', onClick: handleConfirmProcess },
+          { label: t('ดำเนินการ'), variant: 'primary', onClick: handleConfirmProcess },
         ]}
       >
         <div className="dialog-item-list">
@@ -562,7 +557,7 @@ export default function GlWriteoffMonthlyPage({ data, onView, onProcessBatch }) 
       <Dialog
         open={resultOpen}
         variant="success"
-        title={t('ดำเนินการตัดบัญชีสำเร็จ!')}
+        title={t('ดำเนินการรายการบัญชีประจำสำเร็จ!')}
         message={!resultHasFailures ? t('สามารถตรวจสอบสถานะของรายการตัดบัญชีได้ในหน้าประวัติการตัดบัญชีทั้งหมด') : null}
         autoCloseMs={!resultHasFailures ? 3000 : undefined}
         onClose={() => setResultOpen(false)}

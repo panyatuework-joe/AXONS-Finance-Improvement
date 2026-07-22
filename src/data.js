@@ -1,4 +1,4 @@
-import { glWriteoffPerPeriodAmount, buildPeriodCode, calcTaxAmount } from './utils';
+import { recurringPerPeriodAmount } from './utils';
 
 export const YEAR_OPTIONS = ['2024', '2025', '2026', '2027'];
 
@@ -161,7 +161,7 @@ export function seedModuleData() {
 
 // ===== GL Write-off (ตัดบัญชี GL) =====
 
-export const GL_WRITEOFF_COMPANY = '6613 - บมจ.กรุงเทพโปรดิ๊วส';
+export const RECURRING_COMPANY = '6613 - บมจ.กรุงเทพโปรดิ๊วส';
 
 export const DOC_TYPE_OPTIONS = ['01 - ใบแจ้งหนี้', '02 - ใบกำกับภาษี', '03 - ใบเสร็จรับเงิน'];
 
@@ -195,29 +195,29 @@ export const START_PERIOD_OPTIONS = Array.from({ length: 19 }, (_, i) => {
   return `${String(month).padStart(2, '0')}/${year}`;
 });
 
-const GL_WRITEOFF_SEED = [
+const RECURRING_SEED = [
   { description: 'ค่าเช่าสำนักงานสาขาสุขุมวิท จ่ายล่วงหน้า 12 เดือน', dept: '00 - สำนักงานใหญ่', category: 'จ่ายล่วงหน้า', totalAmount: 200000, installments: 6, installmentsPaid: 3, status: 'ระหว่างดำเนินการ' },
-  { description: 'ค่าประกันภัยทรัพย์สินจ่ายล่วงหน้า 1 ปี', dept: '01 - Corn Seed R&D Business', category: 'จ่ายล่วงหน้า', totalAmount: 150500, installments: 3, installmentsPaid: 2, status: 'แบบร่าง' },
-  { description: 'รายได้ค่าบริการดูแลและระบบรับล่วงหน้า (ลูกค้า ABC)', dept: '02 - Corn Seed Business', category: 'จ่ายล่วงหน้า', totalAmount: 320100, installments: 6, installmentsPaid: 1, status: 'หยุดชั่วคราว' },
+  { description: 'ค่าประกันภัยทรัพย์สินจ่ายล่วงหน้า 1 ปี', dept: '01 - Corn Seed R&D Business', category: 'จ่ายล่วงหน้า', totalAmount: 150500, installments: 3, installmentsPaid: 2, status: 'ฉบับร่าง' },
+  { description: 'รายได้ค่าบริการดูแลและระบบรับล่วงหน้า (ลูกค้า ABC)', dept: '02 - Corn Seed Business', category: 'จ่ายล่วงหน้า', totalAmount: 320100, installments: 6, installmentsPaid: 1, status: 'ระหว่างดำเนินการ', failedInstallment: 2 },
   { description: 'ค่าสมาชิกซอฟต์แวร์รับล่วงหน้า (License 1 ปี)', dept: '03 - Corn Seed Extension Business', category: 'รับล่วงหน้า', totalAmount: 75250, installments: 12, installmentsPaid: 9, status: 'ระหว่างดำเนินการ' },
   { description: 'ค่าบริการสนับสนุนทางเทคนิครายปี', dept: '04 - Corn Seed Business', category: 'จ่ายล่วงหน้า', totalAmount: 980000, installments: 6, installmentsPaid: 3, status: 'ระหว่างดำเนินการ' },
   { description: 'ค่าบริการอัปเกรดซอฟต์แวร์เซิร์ฟเวอร์ชันใหม่', dept: '05 - Fertiliser Business', category: 'รับล่วงหน้า', totalAmount: 430125, installments: 6, installmentsPaid: 4, status: 'ยกเลิก' },
-  { description: 'ค่าธรรมเนียมการติดตั้งระบบครั้งแรก', dept: '06 - HarvestBoost Solutions', category: 'จ่ายล่วงหน้า', totalAmount: 560300, installments: 3, installmentsPaid: 1, status: 'ระหว่างดำเนินการ' },
+  { description: 'ค่าธรรมเนียมการติดตั้งระบบครั้งแรก', dept: '06 - HarvestBoost Solutions', category: 'จ่ายล่วงหน้า', totalAmount: 560300, installments: 3, installmentsPaid: 0, status: 'ระหว่างดำเนินการ' },
   { description: 'ค่าบริการฝึกอบรมผู้ใช้งาน', dept: '07 - EcoBloom Nutrients', category: 'จ่ายล่วงหน้า', totalAmount: 1200000, installments: 12, installmentsPaid: 9, status: 'ระหว่างดำเนินการ' },
-  { description: 'ค่าบริการสำรองข้อมูลและกู้คืนระบบ', dept: '08 - GreenGrow Fertilizers', category: 'รับล่วงหน้า', totalAmount: 870450, installments: 12, installmentsPaid: 6, status: 'หยุดชั่วคราว' },
-  { description: 'ค่าโฆษณาออนไลน์จ่ายล่วงหน้า ไตรมาส 3/2569', dept: '09 - AgriMax Fertilizers', category: 'จ่ายล่วงหน้า', totalAmount: 615000, installments: 12, installmentsPaid: 12, status: 'จ่ายครบแล้ว' },
-  { description: 'ค่าเบี้ยประกันรถยนต์บริษัทจ่ายล่วงหน้า 1 ปี', dept: '00 - สำนักงานใหญ่', category: 'จ่ายล่วงหน้า', totalAmount: 96000, installments: 12, installmentsPaid: 12, status: 'จ่ายครบแล้ว' },
-  { description: 'ค่าสมาชิกฐานข้อมูลวิจัยตลาดรับล่วงหน้า (License 1 ปี)', dept: '01 - Corn Seed R&D Business', category: 'รับล่วงหน้า', totalAmount: 264000, installments: 6, installmentsPaid: 6, status: 'จ่ายครบแล้ว' },
-  { description: 'ค่าเช่าคลังสินค้าสาขาระยอง จ่ายล่วงหน้า 6 เดือน', dept: '04 - Corn Seed Business', category: 'จ่ายล่วงหน้า', totalAmount: 342000, installments: 6, installmentsPaid: 6, status: 'จ่ายครบแล้ว' },
+  { description: 'ค่าบริการสำรองข้อมูลและกู้คืนระบบ', dept: '08 - GreenGrow Fertilizers', category: 'รับล่วงหน้า', totalAmount: 870450, installments: 12, installmentsPaid: 6, status: 'ระหว่างดำเนินการ' },
+  { description: 'ค่าโฆษณาออนไลน์จ่ายล่วงหน้า ไตรมาส 3/2569', dept: '09 - AgriMax Fertilizers', category: 'จ่ายล่วงหน้า', totalAmount: 615000, installments: 12, installmentsPaid: 12, status: 'เสร็จสิ้น' },
+  { description: 'ค่าเบี้ยประกันรถยนต์บริษัทจ่ายล่วงหน้า 1 ปี', dept: '00 - สำนักงานใหญ่', category: 'จ่ายล่วงหน้า', totalAmount: 96000, installments: 12, installmentsPaid: 12, status: 'เสร็จสิ้น' },
+  { description: 'ค่าสมาชิกฐานข้อมูลวิจัยตลาดรับล่วงหน้า (License 1 ปี)', dept: '01 - Corn Seed R&D Business', category: 'รับล่วงหน้า', totalAmount: 264000, installments: 6, installmentsPaid: 6, status: 'เสร็จสิ้น' },
+  { description: 'ค่าเช่าคลังสินค้าสาขาระยอง จ่ายล่วงหน้า 6 เดือน', dept: '04 - Corn Seed Business', category: 'จ่ายล่วงหน้า', totalAmount: 342000, installments: 6, installmentsPaid: 6, status: 'เสร็จสิ้น' },
 ];
 
-export function seedGlWriteoffEntries() {
-  return GL_WRITEOFF_SEED.map((item, i) => {
-    const monthly = glWriteoffPerPeriodAmount(item.totalAmount, item.installments);
+export function seedRecurringEntries() {
+  return RECURRING_SEED.map((item, i) => {
+    const monthly = recurringPerPeriodAmount(item.totalAmount, item.installments);
     return {
-      id: `glw-${i + 1}`,
+      id: `rec-${i + 1}`,
       code: `RCE-26062526-${String(i + 1).padStart(4, '0')}`,
-      company: GL_WRITEOFF_COMPANY,
+      company: RECURRING_COMPANY,
       dept: item.dept,
       subDept: '00 - สำนักงานใหญ่',
       docType: DOC_TYPE_OPTIONS[0],
@@ -225,18 +225,20 @@ export function seedGlWriteoffEntries() {
       category: item.category,
       description: item.description,
       totalAmount: item.totalAmount,
+      paymentFrequency: 'รายเดือน',
       installments: item.installments,
       installmentsPaid: item.installmentsPaid,
+      failedInstallment: item.failedInstallment ?? null,
       startPeriod: '06/2569',
       startDate: '25/06/2569',
       createdBy: 'Nattapong Chaiyaporn',
       createdAt: '25/06/2026',
       status: item.status,
       debitLines: [
-        { id: `glw-${i + 1}-d1`, dept: UL_DEPT_OPTIONS[0], accountCode: GL_ACCOUNT_CODE_OPTIONS[0], cvCode: CV_OPTIONS[0], amount: monthly },
+        { id: `rec-${i + 1}-d1`, dept: UL_DEPT_OPTIONS[0], accountCode: GL_ACCOUNT_CODE_OPTIONS[0], glAccountCode: ACCOUNT_OPTIONS[0], cvCode: CV_OPTIONS[0], amount: monthly },
       ],
       creditLines: [
-        { id: `glw-${i + 1}-c1`, dept: UL_DEPT_OPTIONS[3], accountCode: GL_ACCOUNT_CODE_OPTIONS[1], cvCode: CV_OPTIONS[1], amount: monthly },
+        { id: `rec-${i + 1}-c1`, dept: UL_DEPT_OPTIONS[3], accountCode: GL_ACCOUNT_CODE_OPTIONS[1], glAccountCode: ACCOUNT_OPTIONS[1], cvCode: CV_OPTIONS[1], amount: monthly },
       ],
       files: i === 0 ? ['CPALL130921.pdf', 'CPALL130921.pdf', 'CPALL130921.pdf'] : [],
     };
@@ -266,75 +268,3 @@ export function seedReconciliationItems() {
   }));
 }
 
-// ===== Purchase Tax Invoice (บันทึกภาษีซื้อ) — ref. legacy ACM04000 =====
-
-export const PT_DOC_TYPE_OPTIONS = ['ใบกำกับภาษีเต็มรูป', 'ใบกำกับภาษีอย่างย่อ', 'ใบลดหนี้', 'ใบเพิ่มหนี้'];
-
-export const PT_STATUS_OPTIONS = ['รอบันทึก', 'ยืนยันแล้ว', 'ยกเลิก'];
-
-// อ้างถึง: ประเภทเอกสารต้นทางที่มาจาก GL/AP — ต้องยืนยันรายการที่แท้จริงกับ BA (ดู Open Questions)
-export const PT_REF_DOC_TYPE_OPTIONS = [
-  '21 - ใบสำคัญจ่าย (AP Invoice)',
-  '22 - รายการบันทึกบัญชี (GL Posting)',
-  '23 - รายการตัดบัญชีอัตโนมัติ (Recurring GL)',
-];
-
-export const PT_VENDOR_OPTIONS = [
-  'บริษัท ไทยยูเนี่ยน ฟีดมิลล์ จำกัด (มหาชน)',
-  'บริษัท บางกอกแร้นช์ จำกัด (มหาชน)',
-  'บริษัท เบทาโกร จำกัด (มหาชน)',
-  'บริษัท อายิโนะโมะโต๊ะ (ประเทศไทย) จำกัด',
-  'บริษัท ปูนซิเมนต์ไทย จำกัด (มหาชน)',
-];
-
-// เอกสารอ้างอิงจาก GL/AP ที่ Post แล้ว — เฉพาะรายการที่ยังไม่ถูกบันทึกภาษีซื้อจะถูกใช้เป็นตัวเลือกในหน้าจอ "เลือก"
-const PT_REF_DOC_SEED = [
-  { docNo: '21066012606008', refDocType: PT_REF_DOC_TYPE_OPTIONS[0], vendorName: PT_VENDOR_OPTIONS[0], description: 'ซื้อวัตถุดิบอาหารสัตว์ประจำเดือนมิถุนายน', dept: DEPT_OPTIONS[0], subDept: '00 - สำนักงานใหญ่', amount: 27559254.37 },
-  { docNo: '21066012606009', refDocType: PT_REF_DOC_TYPE_OPTIONS[0], vendorName: PT_VENDOR_OPTIONS[1], description: 'ซื้อไก่มีชีวิตจากฟาร์มเครือข่าย', dept: DEPT_OPTIONS[1], subDept: '00 - สำนักงานใหญ่', amount: 4520100 },
-  { docNo: '22066012606010', refDocType: PT_REF_DOC_TYPE_OPTIONS[1], vendorName: PT_VENDOR_OPTIONS[2], description: 'ค่าบริการขนส่งสินค้าระหว่างคลัง', dept: DEPT_OPTIONS[2], subDept: '00 - สำนักงานใหญ่', amount: 890000 },
-  { docNo: '21066012606011', refDocType: PT_REF_DOC_TYPE_OPTIONS[0], vendorName: PT_VENDOR_OPTIONS[3], description: 'ซื้อวัตถุเจือปนอาหารสำหรับสายการผลิต', dept: DEPT_OPTIONS[3], subDept: '00 - สำนักงานใหญ่', amount: 1250750.5 },
-  { docNo: '23066012606012', refDocType: PT_REF_DOC_TYPE_OPTIONS[2], vendorName: PT_VENDOR_OPTIONS[4], description: 'ค่าเช่าเครื่องจักรบรรจุภัณฑ์รายเดือน', dept: DEPT_OPTIONS[4], subDept: '00 - สำนักงานใหญ่', amount: 356800 },
-  { docNo: '21066012606013', refDocType: PT_REF_DOC_TYPE_OPTIONS[0], vendorName: PT_VENDOR_OPTIONS[0], description: 'ซื้อวัตถุดิบอาหารสัตว์เพิ่มเติม', dept: DEPT_OPTIONS[0], subDept: '00 - สำนักงานใหญ่', amount: 3120450 },
-];
-
-export function seedPurchaseTaxRefDocs() {
-  return PT_REF_DOC_SEED.map((item, i) => ({ id: `ptref-${i + 1}`, ...item }));
-}
-
-const PT_PERIOD_JUNE_2569 = buildPeriodCode('มิถุนายน', '2569', THAI_MONTH_OPTIONS);
-
-const PT_INVOICE_SEED = [
-  { refIndex: 0, vendorInvoiceNo: 'INV-6906-000123', invoiceDate: '2026-06-05', taxRate: 7, status: 'ยืนยันแล้ว' },
-  { refIndex: 1, vendorInvoiceNo: 'INV-6906-000456', invoiceDate: '2026-06-08', taxRate: 7, status: 'รอบันทึก' },
-  { refIndex: 2, vendorInvoiceNo: 'TX-2026-000789', invoiceDate: '2026-06-10', taxRate: 7, status: 'รอบันทึก' },
-];
-
-export function seedPurchaseTaxInvoices() {
-  const refDocs = seedPurchaseTaxRefDocs();
-  return PT_INVOICE_SEED.map((item, i) => {
-    const ref = refDocs[item.refIndex];
-    return {
-      id: `pti-${i + 1}`,
-      code: `VT${PT_PERIOD_JUNE_2569}-${String(i + 1).padStart(4, '0')}`,
-      period: PT_PERIOD_JUNE_2569,
-      month: 'มิถุนายน',
-      year: '2569',
-      dept: ref.dept,
-      subDept: ref.subDept,
-      docType: PT_DOC_TYPE_OPTIONS[0],
-      invoiceDate: item.invoiceDate,
-      vendorInvoiceNo: item.vendorInvoiceNo,
-      vendorName: ref.vendorName,
-      description: ref.description,
-      refDocType: ref.refDocType,
-      refDocNo: ref.docNo,
-      taxRate: item.taxRate,
-      baseAmount: ref.amount,
-      taxAmount: calcTaxAmount(ref.amount, item.taxRate),
-      status: item.status,
-      cancelReason: '',
-      createdBy: 'Nattapong Chaiyaporn',
-      createdAt: '01/06/2026',
-    };
-  });
-}

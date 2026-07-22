@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  GL_WRITEOFF_COMPANY,
+  RECURRING_COMPANY,
   DEPT_OPTIONS,
   DOC_TYPE_OPTIONS,
   DOC_NO_OPTIONS,
   WRITEOFF_CATEGORY_OPTIONS,
   UL_DEPT_OPTIONS,
   GL_ACCOUNT_CODE_OPTIONS,
+  ACCOUNT_OPTIONS,
   CV_OPTIONS,
   START_PERIOD_OPTIONS,
 } from '../data';
@@ -15,7 +16,7 @@ import Combobox from '../components/Combobox';
 import Dialog from '../components/Dialog';
 import EmptyState from '../components/EmptyState';
 import Pagination from '../components/Pagination';
-import { buildGlWriteoffSchedule, glWriteoffPerPeriodAmount } from '../utils';
+import { buildRecurringSchedule, recurringPerPeriodAmount } from '../utils';
 import {
   ChevronBreadcrumbIcon,
   CheckCircleSolidIcon,
@@ -26,6 +27,7 @@ import {
   PlusIcon,
   PreviewFileIcon,
   RetryIcon,
+  ViewIcon,
 } from '../icons';
 
 const PAYMENT_FREQUENCY_OPTIONS = ['รายเดือน', 'รายไตรมาส', 'รายปี'];
@@ -63,9 +65,10 @@ let lineIdCounter = 0;
 function newLine({ accountCode = '', locked = null } = {}) {
   lineIdCounter += 1;
   return {
-    id: `glw-line-${Date.now()}-${lineIdCounter}`,
+    id: `rec-line-${Date.now()}-${lineIdCounter}`,
     dept: '',
     accountCode,
+    glAccountCode: '',
     cvCode: '',
     debitAmount: 0,
     creditAmount: 0,
@@ -76,28 +79,88 @@ function newLine({ accountCode = '', locked = null } = {}) {
 let uploadIdCounter = 0;
 function nextUploadId() {
   uploadIdCounter += 1;
-  return `glw-upload-${Date.now()}-${uploadIdCounter}`;
+  return `rec-upload-${Date.now()}-${uploadIdCounter}`;
 }
 
-export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
+// เมื่อแก้ไขฉบับร่าง แปลง debitLines/creditLines ของ entry กลับเป็นแถวรวม (lines) —
+// แถวแรกของแต่ละฝั่งถือว่าเป็นแถวที่ระบบล็อกยอดให้ ส่วนที่เหลือเป็นแถวที่ผู้ใช้เพิ่มเอง
+function linesFromEntry(entry) {
+  const debit = entry?.debitLines ?? [];
+  const credit = entry?.creditLines ?? [];
+  if (debit.length === 0 && credit.length === 0) {
+    return [
+      newLine({ accountCode: GL_ACCOUNT_CODE_OPTIONS[0], locked: 'debit' }),
+      newLine({ accountCode: GL_ACCOUNT_CODE_OPTIONS[1], locked: 'credit' }),
+    ];
+  }
+  const rows = [];
+  debit.forEach((l, i) => {
+    lineIdCounter += 1;
+    rows.push({
+      id: l.id ?? `rec-line-${Date.now()}-${lineIdCounter}`,
+      dept: l.dept,
+      accountCode: l.accountCode,
+      glAccountCode: l.glAccountCode ?? '',
+      cvCode: l.cvCode,
+      debitAmount: l.amount,
+      creditAmount: 0,
+      locked: i === 0 ? 'debit' : null,
+    });
+  });
+  credit.forEach((l, i) => {
+    lineIdCounter += 1;
+    rows.push({
+      id: l.id ?? `rec-line-${Date.now()}-${lineIdCounter}`,
+      dept: l.dept,
+      accountCode: l.accountCode,
+      glAccountCode: l.glAccountCode ?? '',
+      cvCode: l.cvCode,
+      debitAmount: 0,
+      creditAmount: l.amount,
+      locked: i === 0 ? 'credit' : null,
+    });
+  });
+  return rows;
+}
+
+export default function RecurringFormPage({
+  existing,
+  initial,
+  duplicateFrom,
+  onCancel,
+  onSave,
+  onSaveDraft,
+  onViewSource,
+}) {
   const { t, tv } = useApp();
   const fileInputRef = useRef(null);
   const uploadTimersRef = useRef({});
 
-  const [dept, setDept] = useState('');
-  const [docType, setDocType] = useState('');
-  const [docNo, setDocNo] = useState('');
-  const [category, setCategory] = useState(WRITEOFF_CATEGORY_OPTIONS[0]);
-  const [description, setDescription] = useState('');
-  const [totalAmount, setTotalAmount] = useState('');
-  const [installments, setInstallments] = useState('');
-  const [startPeriod, setStartPeriod] = useState('');
-  const [paymentFrequency, setPaymentFrequency] = useState(PAYMENT_FREQUENCY_OPTIONS[0]);
-  const [files, setFiles] = useState([]);
-  const [lines, setLines] = useState([
-    newLine({ accountCode: GL_ACCOUNT_CODE_OPTIONS[0], locked: 'debit' }),
-    newLine({ accountCode: GL_ACCOUNT_CODE_OPTIONS[1], locked: 'credit' }),
-  ]);
+  // แก้ไขรายการที่มีอยู่ (initial) ใช้ข้อมูลของ initial เสมอ ส่วนคัดลอกรายการ (duplicateFrom)
+  // ใช้เป็นค่าเริ่มต้นให้ฟอร์มสร้างใหม่เท่านั้น ไม่ผูก id/code ของรายการต้นฉบับ
+  const seed = initial ?? duplicateFrom;
+  const isEditingInProgress = !!initial && initial.status !== 'ฉบับร่าง';
+
+  const [dept, setDept] = useState(seed?.dept ?? '');
+  const [docType, setDocType] = useState(seed?.docType ?? '');
+  const [docNo, setDocNo] = useState(seed?.docNo ?? '');
+  const [category, setCategory] = useState(seed?.category ?? WRITEOFF_CATEGORY_OPTIONS[0]);
+  const [description, setDescription] = useState(seed?.description ?? '');
+  const [totalAmount, setTotalAmount] = useState(seed?.totalAmount > 0 ? formatMoney(seed.totalAmount) : '');
+  const [installments, setInstallments] = useState(seed?.installments > 0 ? String(seed.installments) : '');
+  const [startPeriod, setStartPeriod] = useState(seed?.startPeriod ?? '');
+  const [paymentFrequency, setPaymentFrequency] = useState(seed?.paymentFrequency ?? PAYMENT_FREQUENCY_OPTIONS[0]);
+  const [files, setFiles] = useState(
+    () => initial?.files?.map((name) => ({
+      id: nextUploadId(),
+      name,
+      sizeLabel: '1.2 MB',
+      status: 'success',
+      progress: 100,
+      settled: true,
+    })) ?? [],
+  );
+  const [lines, setLines] = useState(() => linesFromEntry(seed));
   const [dirty, setDirty] = useState(false);
   const [linesPage, setLinesPage] = useState(1);
 
@@ -105,6 +168,8 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
   const [leaveWarningOpen, setLeaveWarningOpen] = useState(false);
   const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+  const [confirmSaveDraftOpen, setConfirmSaveDraftOpen] = useState(false);
+  const [saveDraftSuccessOpen, setSaveDraftSuccessOpen] = useState(false);
 
   const subDept = dept ? '00 - สำนักงานใหญ่' : '';
 
@@ -112,11 +177,11 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
   const installmentsNum = parseInt(installments, 10) || 0;
 
   const schedule = useMemo(
-    () => buildGlWriteoffSchedule(totalNum, installmentsNum, startPeriod),
+    () => buildRecurringSchedule(totalNum, installmentsNum, startPeriod),
     [totalNum, installmentsNum, startPeriod],
   );
 
-  const perPeriodAmount = glWriteoffPerPeriodAmount(totalNum, installmentsNum);
+  const perPeriodAmount = recurringPerPeriodAmount(totalNum, installmentsNum);
 
   // แถวที่ระบบสร้างอัตโนมัติ (locked) ล็อกยอดตามยอดตัดบัญชีต่อเดือน (งวดที่ 2 เป็นต้นไป) เสมอ
   // ส่วนแถวที่ผู้ใช้กดเพิ่มเองกรอกยอดเดบิต/เครดิตได้อิสระ
@@ -132,10 +197,13 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
 
   const debitTotal = lines.reduce((sum, l) => sum + l.debitAmount, 0);
   const creditTotal = lines.reduce((sum, l) => sum + l.creditAmount, 0);
+  const totalsMatch = debitTotal === creditTotal;
 
   const linesValid =
     lines.length > 0 &&
-    lines.every((l) => l.dept && l.accountCode && l.cvCode && (l.debitAmount > 0 || l.creditAmount > 0));
+    lines.every(
+      (l) => l.dept && l.accountCode && l.glAccountCode && l.cvCode && (l.debitAmount > 0 || l.creditAmount > 0),
+    );
 
   const linesTotalPages = Math.max(1, Math.ceil(lines.length / ACCOUNT_LINES_PAGE_SIZE));
   const linesPageClamped = Math.min(linesPage, linesTotalPages);
@@ -157,7 +225,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
     !!startPeriod;
 
   const hasUploadingFiles = files.some((f) => f.status === 'uploading');
-  const formValid = accountInfoValid && linesValid;
+  const formValid = accountInfoValid && linesValid && totalsMatch;
 
   useEffect(() => {
     return () => {
@@ -263,15 +331,15 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
     markDirty();
   }
 
-  function buildEntry() {
+  function buildEntry(status) {
     const maxCode = existing.reduce((max, e) => {
       const n = parseInt(e.code.split('-').pop() ?? '0', 10);
       return Number.isNaN(n) ? max : Math.max(max, n);
     }, 0);
     return {
-      id: `glw-${Date.now()}`,
-      code: `RCE-26062526-${String(maxCode + 1).padStart(4, '0')}`,
-      company: GL_WRITEOFF_COMPANY,
+      id: initial?.id ?? `rec-${Date.now()}`,
+      code: initial?.code ?? `RCE-26062526-${String(maxCode + 1).padStart(4, '0')}`,
+      company: RECURRING_COMPANY,
       dept,
       subDept,
       docType,
@@ -281,26 +349,51 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
       totalAmount: totalNum,
       paymentFrequency,
       installments: installmentsNum,
-      installmentsPaid: 0,
+      installmentsPaid: initial?.installmentsPaid ?? 0,
       startPeriod,
-      startDate: `25/${startPeriod}`,
-      createdBy: 'สิริศักดิ์ หงษ์พัตรา',
-      createdAt: new Date().toLocaleDateString('en-GB'),
-      status: 'ระหว่างดำเนินการ',
+      startDate: startPeriod ? `25/${startPeriod}` : '',
+      createdBy: initial?.createdBy ?? 'สิริศักดิ์ หงษ์พัตรา',
+      createdAt: initial?.createdAt ?? new Date().toLocaleDateString('en-GB'),
+      status,
       debitLines: lines
         .filter((l) => l.debitAmount > 0)
-        .map((l) => ({ id: l.id, dept: l.dept, accountCode: l.accountCode, cvCode: l.cvCode, amount: l.debitAmount })),
+        .map((l) => ({
+          id: l.id,
+          dept: l.dept,
+          accountCode: l.accountCode,
+          glAccountCode: l.glAccountCode,
+          cvCode: l.cvCode,
+          amount: l.debitAmount,
+        })),
       creditLines: lines
         .filter((l) => l.creditAmount > 0)
-        .map((l) => ({ id: l.id, dept: l.dept, accountCode: l.accountCode, cvCode: l.cvCode, amount: l.creditAmount })),
+        .map((l) => ({
+          id: l.id,
+          dept: l.dept,
+          accountCode: l.accountCode,
+          glAccountCode: l.glAccountCode,
+          cvCode: l.cvCode,
+          amount: l.creditAmount,
+        })),
       files: files.filter((f) => f.status === 'success').map((f) => f.name),
     };
   }
 
   function handleConfirmSubmit() {
     setConfirmSubmitOpen(false);
-    onSave(buildEntry());
+    onSave(buildEntry('ระหว่างดำเนินการ'));
     setSuccessOpen(true);
+  }
+
+  function handleConfirmSaveDraft() {
+    setConfirmSaveDraftOpen(false);
+    onSaveDraft(buildEntry('ฉบับร่าง'));
+    setSaveDraftSuccessOpen(true);
+  }
+
+  function handleSaveDraftSuccessClose() {
+    setSaveDraftSuccessOpen(false);
+    onCancel();
   }
 
   function handleSuccessClose() {
@@ -313,9 +406,9 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
     else onCancel();
   }
 
-  function renderAccountAmountInput(line, field, updateOnChange) {
+  function renderAccountAmountInput(line, field, updateOnChange, error) {
     return (
-      <div className="aft-input-group">
+      <div className={`aft-input-group${error ? ' aft-input-group--error' : ''}`}>
         <input
           type="text"
           inputMode="decimal"
@@ -333,11 +426,12 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
   function renderAccountTable() {
     return (
       <>
-        <div className="glw-line-table-wrapper">
-          <table className="glw-line-table glw-account-table" style={{ minWidth: '1112px' }}>
+        <div className="rec-line-table-wrapper">
+          <table className="rec-line-table rec-account-table" style={{ minWidth: '1272px' }}>
           <colgroup>
             <col style={{ width: '56px' }} />
             <col style={{ width: '200px' }} />
+            <col style={{ width: '160px' }} />
             <col style={{ width: '200px' }} />
             <col style={{ width: '200px' }} />
             <col style={{ width: '200px' }} />
@@ -351,18 +445,21 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                 {t('ฝ่าย (UL)')} <span className="aft-required">*</span>
               </th>
               <th>
+                {t('เดบิต/เครดิต')} <span className="aft-required">*</span>
+              </th>
+              <th>
                 {t('รหัสบัญชี')} <span className="aft-required">*</span>
               </th>
               <th>
                 {t('รหัส CV')} <span className="aft-required">*</span>
               </th>
-              <th className="glw-col-amount">
+              <th className="rec-col-amount rec-form-sticky-3">
                 {t('เดบิต (THB)')} <span className="aft-required">*</span>
               </th>
-              <th className="glw-col-amount">
+              <th className="rec-col-amount rec-form-sticky-2">
                 {t('เครดิต (THB)')} <span className="aft-required">*</span>
               </th>
-              <th></th>
+              <th className="rec-form-sticky-1"></th>
             </tr>
           </thead>
           <tbody>
@@ -392,6 +489,15 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                 </td>
                 <td>
                   <Combobox
+                    value={line.glAccountCode}
+                    onChange={(v) => updateLine(line.id, { glAccountCode: v })}
+                    options={ACCOUNT_OPTIONS.map((a) => ({ value: a, label: t(a) }))}
+                    placeholder={t('กรุณาเลือก')}
+                    searchable
+                  />
+                </td>
+                <td>
+                  <Combobox
                     value={line.cvCode}
                     onChange={(v) => updateLine(line.id, { cvCode: v })}
                     options={CV_OPTIONS.map((c) => ({ value: c, label: t(c) }))}
@@ -399,25 +505,39 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                     searchable
                   />
                 </td>
-                <td className="glw-col-amount">
+                <td className="rec-col-amount rec-form-sticky-3">
                   {line.locked === 'debit' ? (
-                    <span className="glw-account-amount-box">{formatMoney(line.debitAmount)} THB</span>
+                    <span className={`rec-account-amount-box${!totalsMatch ? ' rec-account-amount-box--error' : ''}`}>
+                      {formatMoney(line.debitAmount)} THB
+                    </span>
                   ) : line.locked === 'credit' || line.accountCode === GL_ACCOUNT_CODE_OPTIONS[1] ? (
-                    <span className="glw-account-amount-box glw-account-amount-box--disabled">0.00 THB</span>
+                    <span className="rec-account-amount-box rec-account-amount-box--disabled">0.00 THB</span>
                   ) : (
-                    renderAccountAmountInput(line, 'debitAmount', (v) => updateLine(line.id, { debitAmount: v }))
+                    renderAccountAmountInput(
+                      line,
+                      'debitAmount',
+                      (v) => updateLine(line.id, { debitAmount: v }),
+                      !totalsMatch,
+                    )
                   )}
                 </td>
-                <td className="glw-col-amount">
+                <td className="rec-col-amount rec-form-sticky-2">
                   {line.locked === 'credit' ? (
-                    <span className="glw-account-amount-box">{formatMoney(line.creditAmount)} THB</span>
+                    <span className={`rec-account-amount-box${!totalsMatch ? ' rec-account-amount-box--error' : ''}`}>
+                      {formatMoney(line.creditAmount)} THB
+                    </span>
                   ) : line.locked === 'debit' || line.accountCode === GL_ACCOUNT_CODE_OPTIONS[0] ? (
-                    <span className="glw-account-amount-box glw-account-amount-box--disabled">0.00 THB</span>
+                    <span className="rec-account-amount-box rec-account-amount-box--disabled">0.00 THB</span>
                   ) : (
-                    renderAccountAmountInput(line, 'creditAmount', (v) => updateLine(line.id, { creditAmount: v }))
+                    renderAccountAmountInput(
+                      line,
+                      'creditAmount',
+                      (v) => updateLine(line.id, { creditAmount: v }),
+                      !totalsMatch,
+                    )
                   )}
                 </td>
-                <td>
+                <td className="rec-form-sticky-1">
                   <button
                     type="button"
                     className="ft-action-btn"
@@ -430,13 +550,13 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                 </td>
               </tr>
             ))}
-            <tr className="glw-total-row">
-              <td colSpan={4} className="glw-total-label">
+            <tr className="rec-total-row">
+              <td colSpan={4} className="rec-total-label">
                 {t('ยอดรวม')}
               </td>
-              <td className="glw-col-amount glw-total-amount">{formatMoney(debitTotal)} THB</td>
-              <td className="glw-col-amount glw-total-amount">{formatMoney(creditTotal)} THB</td>
-              <td></td>
+              <td className="rec-col-amount rec-total-amount rec-form-sticky-3">{formatMoney(debitTotal)} THB</td>
+              <td className="rec-col-amount rec-total-amount rec-form-sticky-2">{formatMoney(creditTotal)} THB</td>
+              <td className="rec-form-sticky-1"></td>
             </tr>
           </tbody>
           </table>
@@ -457,22 +577,22 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
   function renderUploadCard(file) {
     if (file.status === 'success' && file.settled) {
       return (
-        <div className="glwd-file-card" key={file.id}>
+        <div className="recd-file-card" key={file.id}>
           <FileDocIcon />
-          <div className="glwd-file-info">
-            <span className="glwd-file-name">{file.name}</span>
-            <span className="glwd-file-size">{file.sizeLabel}</span>
+          <div className="recd-file-info">
+            <span className="recd-file-name">{file.name}</span>
+            <span className="recd-file-size">{file.sizeLabel}</span>
           </div>
-          <div className="glwd-file-actions">
+          <div className="recd-file-actions">
             <button
               type="button"
-              className="glwd-file-action-btn glwd-file-action-btn--danger"
+              className="recd-file-action-btn recd-file-action-btn--danger"
               title={t('ลบ')}
               onClick={() => removeFile(file.id)}
             >
               <DeleteIcon color="var(--color-error-default)" size={16} />
             </button>
-            <button type="button" className="glwd-file-action-btn glwd-file-action-btn--outline" title={t('ดูตัวอย่าง')}>
+            <button type="button" className="recd-file-action-btn recd-file-action-btn--outline" title={t('ดูตัวอย่าง')}>
               <PreviewFileIcon />
             </button>
           </div>
@@ -488,27 +608,27 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
     const isError = isFormatError || isSizeError || isGenericError;
 
     return (
-      <div className="glw-upload-card" key={file.id}>
+      <div className="rec-upload-card" key={file.id}>
         <FileDocIcon color={isSuccess ? 'var(--color-primary-default)' : 'var(--color-primary-container)'} />
-        <div className="glw-upload-info">
-          <div className="glw-upload-name-row">
-            <span className="glw-upload-name">{file.name}</span>
+        <div className="rec-upload-info">
+          <div className="rec-upload-name-row">
+            <span className="rec-upload-name">{file.name}</span>
             {isSuccess && <CheckCircleSolidIcon />}
             {isError && <ErrorCircleSolidIcon />}
           </div>
-          <div className={`glw-upload-track${isError ? ' glw-upload-track--error' : ''}`}>
+          <div className={`rec-upload-track${isError ? ' rec-upload-track--error' : ''}`}>
             <div
-              className={`glw-upload-fill${isSuccess ? ' glw-upload-fill--success' : isError ? ' glw-upload-fill--error' : ''}`}
+              className={`rec-upload-fill${isSuccess ? ' rec-upload-fill--success' : isError ? ' rec-upload-fill--error' : ''}`}
               style={{ width: `${file.progress}%` }}
             />
           </div>
-          <div className="glw-upload-status-row">
-            <span className="glw-upload-status-time">
+          <div className="rec-upload-status-row">
+            <span className="rec-upload-status-time">
               {isUploading && tv('{n} วินาที', { n: file.secondsLeft })}
               {isSizeError && file.sizeLabel}
             </span>
             <span
-              className={`glw-upload-status-text glw-upload-status-text--${
+              className={`rec-upload-status-text rec-upload-status-text--${
                 isUploading ? 'uploading' : isSuccess ? 'success' : 'error'
               }`}
             >
@@ -520,11 +640,11 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
             </span>
           </div>
         </div>
-        <div className="glwd-file-actions">
+        <div className="recd-file-actions">
           {isUploading && (
             <button
               type="button"
-              className="glwd-file-action-btn glwd-file-action-btn--danger"
+              className="recd-file-action-btn recd-file-action-btn--danger"
               title={t('ยกเลิก')}
               onClick={() => cancelUpload(file.id)}
             >
@@ -534,7 +654,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
           {isSuccess && (
             <button
               type="button"
-              className="glwd-file-action-btn glwd-file-action-btn--danger"
+              className="recd-file-action-btn recd-file-action-btn--danger"
               title={t('ลบ')}
               onClick={() => removeFile(file.id)}
             >
@@ -544,7 +664,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
           {isGenericError && (
             <button
               type="button"
-              className="glwd-file-action-btn glwd-file-action-btn--neutral"
+              className="recd-file-action-btn recd-file-action-btn--neutral"
               title={t('ลองใหม่')}
               onClick={() => retryUpload(file.id)}
             >
@@ -554,7 +674,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
           {(isSizeError || isFormatError) && (
             <button
               type="button"
-              className="glwd-file-action-btn glwd-file-action-btn--danger"
+              className="recd-file-action-btn recd-file-action-btn--danger"
               title={t('ลบ')}
               onClick={() => removeFile(file.id)}
             >
@@ -574,15 +694,19 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
             {t('จัดการรายการบัญชีประจำ')}
           </span>
           <ChevronBreadcrumbIcon />
-          <span className="aft-breadcrumb-current">{t('สร้างรายการบัญชีประจำ')}</span>
+          <span className="aft-breadcrumb-current">
+            {t(isEditingInProgress ? 'แก้ไขรายการบัญชีประจำ' : initial ? 'แก้ไขฉบับร่าง' : 'สร้างรายการบัญชีประจำ')}
+          </span>
         </div>
-        <h1 className="aft-page-title">{t('สร้างรายการบัญชีประจำ')}</h1>
+        <h1 className="aft-page-title">
+          {t(isEditingInProgress ? 'แก้ไขรายการบัญชีประจำ' : initial ? 'แก้ไขฉบับร่าง' : 'สร้างรายการบัญชีประจำ')}
+        </h1>
       </div>
 
       <div className="aft-card">
         <div className="aft-section-title">{t('ข้อมูลบัญชีประจำ')}</div>
 
-        <div className="aft-form-row glw-form-row-3">
+        <div className="aft-form-row rec-form-row-3">
           <div className="aft-form-field">
             <label className="aft-form-label">{t('บริษัท')}</label>
             <div className="aft-input-group">
@@ -590,7 +714,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                 type="text"
                 className="aft-input-amount"
                 style={{ textAlign: 'left' }}
-                value={t(GL_WRITEOFF_COMPANY)}
+                value={t(RECURRING_COMPANY)}
                 disabled
               />
             </div>
@@ -624,7 +748,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
           </div>
         </div>
 
-        <div className="aft-form-row glw-form-row-3">
+        <div className="aft-form-row rec-form-row-3">
           <div className="aft-form-field">
             <label className="aft-form-label">
               {t('ประเภทเอกสารอ้างอิง')} <span className="aft-required">*</span>
@@ -686,11 +810,11 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                 markDirty();
               }}
             />
-            <span className="glw-char-count">{description.length}/100</span>
+            <span className="rec-char-count">{description.length}/100</span>
           </div>
         </div>
 
-        <div className="aft-form-row glw-form-row-3">
+        <div className="aft-form-row rec-form-row-3">
           <div className="aft-form-field">
             <label className="aft-form-label">
               {t('ยอดเงินรวมทั้งสัญญา')} <span className="aft-required">*</span>
@@ -765,16 +889,36 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
           </div>
         </div>
 
-        <div className="glw-hint">{t('หากคำนวณค่างวดแล้วพบว่ามีเศษทศนิยม ระบบจะปัดเศษไปรวมในงวดที่ 1')}</div>
+        <div className="rec-hint">{t('หากคำนวณค่างวดแล้วพบว่ามีเศษทศนิยม ระบบจะปัดเศษไปรวมในงวดที่ 1')}</div>
+
+        {duplicateFrom && (
+          <>
+            <div className="aft-divider" />
+            <div className="aft-section-title">{t('ข้อมูลเอกสารอ้างอิง')}</div>
+            <div className="aft-form-row">
+              <div className="aft-form-field">
+                <label className="aft-form-label">{t('รหัสรายการต้นฉบับ')}</label>
+                <button
+                  type="button"
+                  className="aft-breadcrumb-link rec-source-ref-link"
+                  onClick={() => onViewSource?.(duplicateFrom.id)}
+                >
+                  {duplicateFrom.code}
+                  <ViewIcon />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="aft-divider" />
 
         <div className="aft-section-title">{t('ไฟล์แนบ')}</div>
-        <div className="glw-file-row">
-          <button className="glw-file-btn" onClick={() => fileInputRef.current?.click()}>
+        <div className="rec-file-row">
+          <button className="rec-file-btn" onClick={() => fileInputRef.current?.click()}>
             {t('เลือกไฟล์')}
           </button>
-          {files.length === 0 && <span className="glw-file-empty">{t('ยังไม่ได้เลือกไฟล์')}</span>}
+          {files.length === 0 && <span className="rec-file-empty">{t('ยังไม่ได้เลือกไฟล์')}</span>}
           <input
             ref={fileInputRef}
             type="file"
@@ -784,16 +928,16 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
             onChange={(e) => handleFilesSelected(e.target.files)}
           />
         </div>
-        <div className="glw-file-hint">PDF, XLSX, PNG, JPG (MAX. 25MB)</div>
+        <div className="rec-file-hint">PDF, XLSX, PNG, JPG (MAX. 25MB)</div>
         {files.length > 0 && (
           <>
-            <div className="glwd-file-header">
-              <span className="glwd-file-header-text">
-                {t('ไฟล์เอกสารแนบ')} <span className="glwd-file-count">{files.length}</span> {t('รายการ')}
+            <div className="recd-file-header">
+              <span className="recd-file-header-text">
+                {t('ไฟล์เอกสารแนบ')} <span className="recd-file-count">{files.length}</span> {t('รายการ')}
               </span>
-              <span className="glwd-file-header-divider" />
+              <span className="recd-file-header-divider" />
             </div>
-            <div className="glwd-file-list">{files.map((f) => renderUploadCard(f))}</div>
+            <div className="recd-file-list">{files.map((f) => renderUploadCard(f))}</div>
           </>
         )}
 
@@ -806,30 +950,30 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
           </>
         ) : (
           <>
-            <div className="glw-section-header">
+            <div className="rec-section-header">
               <div>
                 <div className="aft-section-title" style={{ marginBottom: 0 }}>
                   {t('ข้อมูลบัญชี')}
                 </div>
-                <div className="glw-section-subtitle">
+                <div className="rec-section-subtitle">
                   {t('ระบบคำนวณยอดเดบิตและเครดิตเริ่มต้นจากยอดรวมทั้งสัญญา ออกมาเป็นยอดบัญชีประจำต่อเดือน')}
                 </div>
               </div>
-              <button type="button" className="ft-btn-outline glw-add-line-btn" onClick={addLine}>
+              <button type="button" className="ft-btn-outline rec-add-line-btn" onClick={addLine}>
                 <PlusIcon color="var(--color-primary-default)" />
                 {t('เพิ่ม')}
               </button>
             </div>
             {renderAccountTable()}
 
-            <div className="glw-section-header">
+            <div className="rec-section-header">
               <div>
                 <div className="aft-section-title" style={{ marginBottom: 0 }}>
                   {t('รายละเอียดบัญชีประจำรายงวด')}
                 </div>
-                <div className="glw-section-subtitle">
+                <div className="rec-section-subtitle">
                   {t('ระบบคำนวณยอดตัดบัญชีอัตโนมัติ')}{' '}
-                  <span className="glw-subtitle-highlight">
+                  <span className="rec-subtitle-highlight">
                     {installmentsNum} {t('งวด')}
                   </span>{' '}
                   {t('หากคำนวณค่างวดแล้วพบว่ามีเศษทศนิยม ระบบจะปัดเศษไปรวมในงวดที่ 1')}
@@ -837,8 +981,8 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
               </div>
             </div>
 
-            <div className="glw-line-table-wrapper">
-              <table className="glw-line-table glw-schedule-table" style={{ minWidth: '640px' }}>
+            <div className="rec-line-table-wrapper">
+              <table className="rec-line-table rec-schedule-table" style={{ minWidth: '640px' }}>
                 <colgroup>
                   <col style={{ width: '160px' }} />
                   <col />
@@ -848,7 +992,7 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                   <tr>
                     <th>{t('งวดที่')}</th>
                     <th>{t('เดือน')}</th>
-                    <th className="glw-col-amount">{t('จำนวนเงินต่องวด (THB)')}</th>
+                    <th className="rec-col-amount">{t('จำนวนเงินต่องวด (THB)')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -858,24 +1002,24 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
                         {row.seq}/{schedule.length}
                       </td>
                       <td>{row.date}</td>
-                      <td className="glw-col-amount">
+                      <td className="rec-col-amount">
                         {row.seq === 1 && row.amount !== perPeriodAmount && (
-                          <span className="glw-schedule-diff-note">
+                          <div className="rec-schedule-diff-note">
                             {tv('ยอดส่วนต่าง {diff} THB จะถูกนำไปบันทึกใน {dept}', {
                               diff: (row.amount - perPeriodAmount).toFixed(2),
                               dept: dept ? t(dept) : '-',
                             })}
-                          </span>
+                          </div>
                         )}
-                        {formatMoney(row.amount)} THB
+                        {formatMoney(row.amount)}
                       </td>
                     </tr>
                   ))}
-                  <tr className="glw-total-row">
-                    <td className="glw-total-label" colSpan={2}>
+                  <tr className="rec-total-row">
+                    <td className="rec-total-label" colSpan={2}>
                       {t('ยอดรวม')}
                     </td>
-                    <td className="glw-col-amount glw-total-amount">{formatMoney(totalNum)}</td>
+                    <td className="rec-col-amount rec-total-amount">{formatMoney(totalNum)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -887,15 +1031,17 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
           <button className="ft-btn-outline" onClick={() => setConfirmCancelOpen(true)}>
             {t('ยกเลิก')}
           </button>
-          <button className="ft-btn-outline" onClick={() => {}}>
-            {t('บันทึกร่าง')}
-          </button>
+          {!isEditingInProgress && (
+            <button className="ft-btn-outline" onClick={() => setConfirmSaveDraftOpen(true)}>
+              {t('บันทึกร่าง')}
+            </button>
+          )}
           <button
             className="aft-btn-add"
             onClick={() => setConfirmSubmitOpen(true)}
             disabled={!formValid || hasUploadingFiles}
           >
-            {t('สร้าง')}
+            {t(isEditingInProgress ? 'บันทึก' : 'สร้าง')}
           </button>
         </div>
       </div>
@@ -941,21 +1087,49 @@ export default function GlWriteoffFormPage({ existing, onCancel, onSave }) {
       <Dialog
         open={confirmSubmitOpen}
         variant="add"
-        title={t('คุณต้องการสร้างรายการตัดบัญชีใช่ไหม?')}
-        message={t('กรุณาตรวจสอบความถูกต้องก่อนสร้างรายการตัดบัญชี')}
+        title={t(
+          isEditingInProgress
+            ? 'คุณต้องการบันทึกการแก้ไขรายการบัญชีประจำใช่ไหม?'
+            : 'คุณต้องการสร้างรายการตัดบัญชีใช่ไหม?',
+        )}
+        message={t(
+          isEditingInProgress
+            ? 'กรุณาตรวจสอบข้อมูลรายการบัญชีประจำให้ถูกต้องก่อนบันทึก'
+            : 'กรุณาตรวจสอบความถูกต้องก่อนสร้างรายการตัดบัญชี',
+        )}
         onClose={() => setConfirmSubmitOpen(false)}
         actions={[
           { label: t('ยกเลิก'), variant: 'outline', onClick: () => setConfirmSubmitOpen(false) },
-          { label: t('สร้าง'), variant: 'primary', onClick: handleConfirmSubmit },
+          { label: t(isEditingInProgress ? 'บันทึก' : 'สร้าง'), variant: 'primary', onClick: handleConfirmSubmit },
         ]}
       />
 
       <Dialog
         open={successOpen}
         variant="success"
-        title={t('สร้างรายการตัดบัญชีสำเร็จ!')}
+        title={t(isEditingInProgress ? 'แก้ไขรายการบัญชีประจำสำเร็จ!' : 'สร้างรายการตัดบัญชีสำเร็จ!')}
         autoCloseMs={3000}
         onClose={handleSuccessClose}
+      />
+
+      <Dialog
+        open={confirmSaveDraftOpen}
+        variant="save"
+        title={t('คุณต้องการบันทึกร่างรายการบัญชีประจำใช่ไหม?')}
+        message={t('ระบบจะบันทึกข้อมูลที่กรอกไว้เป็นร่าง และคุณสามารถแก้ไขได้ภายหลัง')}
+        onClose={() => setConfirmSaveDraftOpen(false)}
+        actions={[
+          { label: t('ยกเลิก'), variant: 'outline', onClick: () => setConfirmSaveDraftOpen(false) },
+          { label: t('บันทึกร่าง'), variant: 'primary', onClick: handleConfirmSaveDraft },
+        ]}
+      />
+
+      <Dialog
+        open={saveDraftSuccessOpen}
+        variant="success"
+        title={t('บันทึกร่างรายการบัญชีประจำสำเร็จ!')}
+        autoCloseMs={3000}
+        onClose={handleSaveDraftSuccessClose}
       />
     </>
   );

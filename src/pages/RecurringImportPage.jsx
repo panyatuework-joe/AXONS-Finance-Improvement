@@ -12,8 +12,11 @@ import {
   SpinnerIcon,
   UploadCloudIcon,
 } from '../icons';
-import { UL_DEPT_OPTIONS, GL_ACCOUNT_CODE_OPTIONS, CV_OPTIONS } from '../data';
-import { parseCsv, nextGlWriteoffCode, glWriteoffPerPeriodAmount } from '../utils';
+import { UL_DEPT_OPTIONS, GL_ACCOUNT_CODE_OPTIONS, ACCOUNT_OPTIONS, CV_OPTIONS } from '../data';
+import { parseCsv, nextRecurringCode, recurringPerPeriodAmount } from '../utils';
+import { readTable, writeTable } from '../api/storage';
+
+const IMPORT_HISTORY_TABLE = 'recurring-import-history';
 
 const MAX_UPLOAD_SIZE_BYTES = 25 * 1024 * 1024;
 const ACCEPTED_UPLOAD_EXTENSIONS = ['csv'];
@@ -37,10 +40,10 @@ function fileExtension(name) {
 let uploadIdCounter = 0;
 function nextUploadId() {
   uploadIdCounter += 1;
-  return `glw-import-upload-${Date.now()}-${uploadIdCounter}`;
+  return `rec-import-upload-${Date.now()}-${uploadIdCounter}`;
 }
 
-export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
+export default function RecurringImportPage({ existing, onCancel, onImport }) {
   const { pushToast, t, tv } = useApp();
   const fileInputRef = useRef(null);
   const uploadTimersRef = useRef({});
@@ -55,6 +58,8 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
   const [importConfirmOpen, setImportConfirmOpen] = useState(false);
   const [importSuccessOpen, setImportSuccessOpen] = useState(false);
   const [importedCount, setImportedCount] = useState(0);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [importHistory, setImportHistory] = useState(() => readTable(IMPORT_HISTORY_TABLE, () => []));
 
   const validRows = previewRows.filter((r) => r.ready);
 
@@ -202,11 +207,11 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
     for (const row of validRows) {
       const totalAmount = parseFloat(row.totalAmountRaw.replace(/,/g, ''));
       const installments = parseInt(row.installmentsRaw, 10);
-      const code = nextGlWriteoffCode(runningEntries);
-      const perAmount = glWriteoffPerPeriodAmount(totalAmount, installments);
+      const code = nextRecurringCode(runningEntries);
+      const perAmount = recurringPerPeriodAmount(totalAmount, installments);
       counter++;
       const entry = {
-        id: `glw-${Date.now()}-${counter}`,
+        id: `rec-${Date.now()}-${counter}`,
         code,
         company: row.company,
         dept: row.dept,
@@ -224,10 +229,24 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
         createdAt: new Date().toLocaleDateString('en-GB'),
         status: 'ระหว่างดำเนินการ',
         debitLines: [
-          { id: `${code}-d1`, dept: row.debitUl, accountCode: row.debitAccountCode, cvCode: row.debitCvCode, amount: perAmount },
+          {
+            id: `${code}-d1`,
+            dept: row.debitUl,
+            accountCode: row.debitAccountCode,
+            glAccountCode: ACCOUNT_OPTIONS[0],
+            cvCode: row.debitCvCode,
+            amount: perAmount,
+          },
         ],
         creditLines: [
-          { id: `${code}-c1`, dept: row.creditUl, accountCode: row.creditAccountCode, cvCode: row.creditCvCode, amount: perAmount },
+          {
+            id: `${code}-c1`,
+            dept: row.creditUl,
+            accountCode: row.creditAccountCode,
+            glAccountCode: ACCOUNT_OPTIONS[1],
+            cvCode: row.creditCvCode,
+            amount: perAmount,
+          },
         ],
         files: [],
       };
@@ -237,6 +256,19 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
     onImport(newEntries);
     setImportedCount(newEntries.length);
     setImportSuccessOpen(true);
+
+    const record = {
+      id: `rec-import-${Date.now()}`,
+      date: new Date().toLocaleDateString('en-GB'),
+      fileNames: [...new Set(validRows.map((row) => row.fileName))].join(', '),
+      importedCount: newEntries.length,
+      importedBy: 'สิริศักดิ์ หงษ์พัตรา',
+    };
+    setImportHistory((prev) => {
+      const next = [record, ...prev];
+      writeTable(IMPORT_HISTORY_TABLE, next);
+      return next;
+    });
   }
 
   function handleImportSuccessClose() {
@@ -261,10 +293,7 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
         <div className="view-title-row">
           <h1 className="aft-page-title">{t('นำเข้าไฟล์รายการตัดบัญชี')}</h1>
           <div className="view-header-actions">
-            <button
-              className="ft-btn-outline"
-              onClick={() => pushToast(t('ฟีเจอร์นี้จะพร้อมใช้งานเร็ว ๆ นี้'), 'info')}
-            >
+            <button className="ft-btn-outline" onClick={() => setHistoryOpen(true)}>
               <HistoryOutlineIcon color="var(--color-primary-default)" />
               {t('ประวัติการนำเข้าไฟล์')}
             </button>
@@ -275,7 +304,7 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
       <div className="aft-card">
         {stage === 'idle' && (
           <div
-            className={`glw-import-dropzone${dragOver ? ' glw-import-dropzone--drag' : ''}`}
+            className={`rec-import-dropzone${dragOver ? ' rec-import-dropzone--drag' : ''}`}
             onClick={() => fileInputRef.current?.click()}
             onDragOver={(e) => {
               e.preventDefault();
@@ -285,10 +314,10 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
             onDrop={handleUploadZoneDrop}
           >
             <UploadCloudIcon />
-            <p className="glw-import-dropzone-text">
-              <span className="glw-import-dropzone-link">{t('คลิกเพื่ออัปโหลด')}</span> {t('หรือลากไฟล์วางที่นี่')}
+            <p className="rec-import-dropzone-text">
+              <span className="rec-import-dropzone-link">{t('คลิกเพื่ออัปโหลด')}</span> {t('หรือลากไฟล์วางที่นี่')}
             </p>
-            <p className="glw-import-dropzone-hint">{t('CSV (MAX. 25MB ต่อไฟล์)')}</p>
+            <p className="rec-import-dropzone-hint">{t('CSV (MAX. 25MB ต่อไฟล์)')}</p>
           </div>
         )}
 
@@ -303,27 +332,27 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
 
         {files.length > 0 && (
           <>
-            <div className="glwd-file-header">
-              <span className="glwd-file-header-text">
-                {t('ไฟล์รายการตัดบัญชี')} <span className="glwd-file-count">{files.length}</span> {t('รายการ')}
+            <div className="recd-file-header">
+              <span className="recd-file-header-text">
+                {t('ไฟล์รายการตัดบัญชี')} <span className="recd-file-count">{files.length}</span> {t('รายการ')}
               </span>
-              <span className="glwd-file-header-divider" />
+              <span className="recd-file-header-divider" />
             </div>
-            <div className="glwd-file-list" style={{ marginBottom: 24 }}>
+            <div className="recd-file-list" style={{ marginBottom: 24 }}>
               {files.map((f) => renderFileCard(f))}
             </div>
           </>
         )}
 
         {stage === 'processing' && (
-          <div className="glw-import-processing">
-            <div className="glw-import-processing-label">
+          <div className="rec-import-processing">
+            <div className="rec-import-processing-label">
               {t('ข้อมูลสำหรับนำเข้ารายการตัดบัญชี')}
-              <div className="glw-section-subtitle">
+              <div className="rec-section-subtitle">
                 {t('รายการตัดบัญชี')}: -
               </div>
             </div>
-            <div className="glw-import-spinner">
+            <div className="rec-import-spinner">
               <SpinnerIcon size={48} color="var(--color-primary-default)" />
               <span>{t('กำลังประมวลผลข้อมูล')}</span>
             </div>
@@ -332,9 +361,9 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
 
         {stage === 'ready' && (
           <>
-            <div className="glw-import-processing-label">
+            <div className="rec-import-processing-label">
               {t('ข้อมูลสำหรับนำเข้ารายการตัดบัญชี')}
-              <div className="glw-section-subtitle">
+              <div className="rec-section-subtitle">
                 {t('รายการตัดบัญชี')}: {previewRows.length}
               </div>
             </div>
@@ -406,13 +435,13 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
                         <td>{row.remark}</td>
                         <td>
                           {row.ready ? (
-                            <span className="glw-import-status-ok">{t('พร้อมนำเข้า')}</span>
+                            <span className="rec-import-status-ok">{t('พร้อมนำเข้า')}</span>
                           ) : (
-                            <div className="glw-import-status-cell">
-                              <span className="glw-import-status-bad">{t('ข้อมูลไม่ถูกต้อง')}</span>
+                            <div className="rec-import-status-cell">
+                              <span className="rec-import-status-bad">{t('ข้อมูลไม่ถูกต้อง')}</span>
                               <button
                                 type="button"
-                                className="glw-import-status-more"
+                                className="rec-import-status-more"
                                 onClick={() => pushToast(row.reason, 'error')}
                               >
                                 {t('ดูเพิ่มเติม')}
@@ -475,6 +504,52 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
         onClose={handleImportSuccessClose}
         actions={[{ label: t('กลับสู่หน้าหลัก'), variant: 'primary', onClick: handleImportSuccessClose }]}
       />
+
+      {historyOpen && (
+        <div className="modal-backdrop" onClick={() => setHistoryOpen(false)}>
+          <div className="modal-card modal-card--wide" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{t('ประวัติการนำเข้าไฟล์')}</h3>
+              <button className="modal-close" onClick={() => setHistoryOpen(false)}>
+                <CloseIcon />
+              </button>
+            </div>
+            <div className="ft-table-wrapper">
+              <table className="ft-table">
+                <thead>
+                  <tr>
+                    <th>{t('วันที่')}</th>
+                    <th>{t('ชื่อไฟล์')}</th>
+                    <th>{t('รายการตัดบัญชี')}</th>
+                    <th>{t('นำเข้าโดย')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {importHistory.length === 0 ? (
+                    <tr>
+                      <td colSpan={4}>{t('ไม่มีข้อมูล')}</td>
+                    </tr>
+                  ) : (
+                    importHistory.map((row) => (
+                      <tr key={row.id}>
+                        <td>{row.date}</td>
+                        <td>{row.fileNames}</td>
+                        <td>{row.importedCount}</td>
+                        <td>{row.importedBy}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="modal-actions">
+              <button className="ft-btn-primary" onClick={() => setHistoryOpen(false)}>
+                {t('ปิดหน้าต่างนี้')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 
@@ -487,22 +562,22 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
 
     if (isDone) {
       return (
-        <div className="glwd-file-card" key={file.id}>
+        <div className="recd-file-card" key={file.id}>
           <FileDocIcon />
-          <div className="glwd-file-info">
-            <span className="glwd-file-name">{file.name}</span>
-            <span className="glwd-file-size">{file.sizeLabel}</span>
+          <div className="recd-file-info">
+            <span className="recd-file-name">{file.name}</span>
+            <span className="recd-file-size">{file.sizeLabel}</span>
           </div>
-          <div className="glwd-file-actions">
+          <div className="recd-file-actions">
             <button
               type="button"
-              className="glwd-file-action-btn glwd-file-action-btn--danger"
+              className="recd-file-action-btn recd-file-action-btn--danger"
               title={t('ลบ')}
               onClick={() => removeFile(file.id)}
             >
               <DeleteIcon color="var(--color-error-default)" size={16} />
             </button>
-            <button type="button" className="glwd-file-action-btn glwd-file-action-btn--outline" title={t('คัดลอก')}>
+            <button type="button" className="recd-file-action-btn recd-file-action-btn--outline" title={t('คัดลอก')}>
               <CopyDuplicateIcon />
             </button>
           </div>
@@ -511,25 +586,25 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
     }
 
     return (
-      <div className="glw-upload-card" key={file.id}>
+      <div className="rec-upload-card" key={file.id}>
         <FileDocIcon color={isError ? 'var(--color-primary-container)' : 'var(--color-primary-container)'} />
-        <div className="glw-upload-info">
-          <div className="glw-upload-name-row">
-            <span className="glw-upload-name">{file.name}</span>
+        <div className="rec-upload-info">
+          <div className="rec-upload-name-row">
+            <span className="rec-upload-name">{file.name}</span>
           </div>
-          <div className={`glw-upload-track${isError ? ' glw-upload-track--error' : ''}`}>
+          <div className={`rec-upload-track${isError ? ' rec-upload-track--error' : ''}`}>
             <div
-              className={`glw-upload-fill${isError ? ' glw-upload-fill--error' : ''}`}
+              className={`rec-upload-fill${isError ? ' rec-upload-fill--error' : ''}`}
               style={{ width: `${file.progress}%` }}
             />
           </div>
-          <div className="glw-upload-status-row">
-            <span className="glw-upload-status-time">
+          <div className="rec-upload-status-row">
+            <span className="rec-upload-status-time">
               {isUploading && tv('{n} วินาที', { n: file.secondsLeft })}
               {isSizeError && file.sizeLabel}
             </span>
             <span
-              className={`glw-upload-status-text glw-upload-status-text--${isUploading ? 'uploading' : 'error'}`}
+              className={`rec-upload-status-text rec-upload-status-text--${isUploading ? 'uploading' : 'error'}`}
             >
               {isUploading && t('กำลังอัปโหลด…')}
               {isSizeError && t('ขนาดไฟล์เกินกำหนด')}
@@ -537,11 +612,11 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
             </span>
           </div>
         </div>
-        <div className="glwd-file-actions">
+        <div className="recd-file-actions">
           {isUploading && (
             <button
               type="button"
-              className="glwd-file-action-btn glwd-file-action-btn--danger"
+              className="recd-file-action-btn recd-file-action-btn--danger"
               title={t('ยกเลิก')}
               onClick={() => removeFile(file.id)}
             >
@@ -551,7 +626,7 @@ export default function GlWriteoffImportPage({ existing, onCancel, onImport }) {
           {isError && (
             <button
               type="button"
-              className="glwd-file-action-btn glwd-file-action-btn--danger"
+              className="recd-file-action-btn recd-file-action-btn--danger"
               title={t('ลบ')}
               onClick={() => removeFile(file.id)}
             >

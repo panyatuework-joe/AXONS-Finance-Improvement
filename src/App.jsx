@@ -15,24 +15,20 @@ import FinancialTargetFormPage from './pages/FinancialTargetFormPage';
 import FinancialTargetViewPage from './pages/FinancialTargetViewPage';
 import ReconciliationPage from './pages/ReconciliationPage';
 import ReconciliationDetailPage from './pages/ReconciliationDetailPage';
-import GlWriteoffMonthlyPage from './pages/GlWriteoffMonthlyPage';
-import GlWriteoffListPage from './pages/GlWriteoffListPage';
-import GlWriteoffImportPage from './pages/GlWriteoffImportPage';
-import GlWriteoffFormPage from './pages/GlWriteoffFormPage';
-import GlWriteoffDetailPage from './pages/GlWriteoffDetailPage';
-import PurchaseTaxInvoicePage from './pages/PurchaseTaxInvoicePage';
+import RecurringMonthlyPage from './pages/RecurringMonthlyPage';
+import RecurringListPage from './pages/RecurringListPage';
+import RecurringImportPage from './pages/RecurringImportPage';
+import RecurringFormPage from './pages/RecurringFormPage';
+import RecurringDetailPage from './pages/RecurringDetailPage';
 import { SpinnerIcon } from './icons';
 import { MODULE_CONFIGS } from './data';
-import { nextGlWriteoffCode } from './utils';
 import {
   MODULE_KEYS,
   accountGroupApi,
   financialTargetApi,
-  glWriteoffApi,
+  recurringApi,
   reconciliationApi,
   crudModuleApi,
-  purchaseTaxInvoiceApi,
-  purchaseTaxRefDocApi,
   ApiError,
 } from './api';
 
@@ -44,15 +40,13 @@ function sidebarKeyForView(view) {
       return 'settings';
     case 'reconciliation':
       return 'reconciliation';
-    case 'gl-writeoff-create':
-    case 'gl-writeoff-form':
-    case 'gl-writeoff-detail':
-    case 'gl-writeoff-import':
-      return 'gl-writeoff-create';
-    case 'gl-writeoff-list':
-      return 'gl-writeoff-list';
-    case 'purchase-tax-invoice':
-      return 'purchase-tax-invoice';
+    case 'recurring-list':
+    case 'recurring-form':
+    case 'recurring-detail':
+    case 'recurring-import':
+      return 'recurring-list';
+    case 'recurring-monthly':
+      return 'recurring-monthly';
     case 'module':
       return view.module;
     case 'reconciliation-detail':
@@ -70,9 +64,8 @@ function viewForSidebarKey(key) {
   if (key === 'home') return { name: 'home' };
   if (key === 'settings') return { name: 'settings' };
   if (key === 'reconciliation') return { name: 'reconciliation' };
-  if (key === 'gl-writeoff-create') return { name: 'gl-writeoff-create' };
-  if (key === 'gl-writeoff-list') return { name: 'gl-writeoff-list' };
-  if (key === 'purchase-tax-invoice') return { name: 'purchase-tax-invoice' };
+  if (key === 'recurring-list') return { name: 'recurring-list' };
+  if (key === 'recurring-monthly') return { name: 'recurring-monthly' };
   if (key === 'account-group') return { name: 'account-group-list' };
   if (key === 'financial-target') return { name: 'financial-target-list' };
   return { name: 'module', module: key };
@@ -87,10 +80,9 @@ function AppShellRouter() {
     () => Object.fromEntries(MODULE_KEYS.map((key) => [key, []])),
   );
   const [reconciliationItems, setReconciliationItems] = useState([]);
-  const [glWriteoffEntries, setGlWriteoffEntries] = useState([]);
-  const [purchaseTaxInvoices, setPurchaseTaxInvoices] = useState([]);
-  const [purchaseTaxRefDocs, setPurchaseTaxRefDocs] = useState([]);
+  const [recurringEntries, setRecurringEntries] = useState([]);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [loggedOut, setLoggedOut] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -102,22 +94,18 @@ function AppShellRouter() {
 
     async function loadAll() {
       try {
-        const [ag, ft, gw, rc, pti, ptRef, moduleEntries] = await Promise.all([
+        const [ag, ft, gw, rc, moduleEntries] = await Promise.all([
           accountGroupApi.list(),
           financialTargetApi.list(),
-          glWriteoffApi.list(),
+          recurringApi.list(),
           reconciliationApi.list(),
-          purchaseTaxInvoiceApi.list(),
-          purchaseTaxRefDocApi.list(),
           Promise.all(MODULE_KEYS.map(async (key) => [key, await crudModuleApi.list(key)])),
         ]);
         if (cancelled) return;
         setAccountGroups(ag);
         setFinancialTargets(ft);
-        setGlWriteoffEntries(gw);
+        setRecurringEntries(gw);
         setReconciliationItems(rc);
-        setPurchaseTaxInvoices(pti);
-        setPurchaseTaxRefDocs(ptRef);
         setCrudData(Object.fromEntries(moduleEntries));
       } catch (err) {
         if (cancelled) return;
@@ -135,12 +123,8 @@ function AppShellRouter() {
 
   /** Fires a persistence call in the background; UI state has already been updated optimistically. */
   function persist(run) {
-    run().catch((err) => {
-      pushToastRef.current(
-        t('บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'),
-        'error',
-        err instanceof ApiError ? err.message : undefined,
-      );
+    run().catch(() => {
+      setErrorDialogOpen(true);
     });
   }
 
@@ -189,102 +173,107 @@ function AppShellRouter() {
         );
       case 'settings':
         return <SettingsPage />;
-      case 'gl-writeoff-create':
+      case 'recurring-list':
         return (
-          <GlWriteoffListPage
-            data={glWriteoffEntries}
-            onCreate={() => setView({ name: 'gl-writeoff-form' })}
-            onView={(id) => setView({ name: 'gl-writeoff-detail', id })}
-            onImportClick={() => setView({ name: 'gl-writeoff-import' })}
+          <RecurringListPage
+            data={recurringEntries}
+            onCreate={() => setView({ name: 'recurring-form' })}
+            onView={(id) => setView({ name: 'recurring-detail', id })}
+            onImportClick={() => setView({ name: 'recurring-import' })}
           />
         );
-      case 'gl-writeoff-import':
+      case 'recurring-import':
         return (
-          <GlWriteoffImportPage
-            existing={glWriteoffEntries}
-            onCancel={() => setView({ name: 'gl-writeoff-create' })}
+          <RecurringImportPage
+            existing={recurringEntries}
+            onCancel={() => setView({ name: 'recurring-list' })}
             onImport={(entries) => {
-              setGlWriteoffEntries((prev) => {
+              setRecurringEntries((prev) => {
                 const next = [...entries, ...prev];
-                persist(() => glWriteoffApi.replace(next));
+                persist(() => recurringApi.replace(next));
                 return next;
               });
             }}
           />
         );
-      case 'gl-writeoff-form':
+      case 'recurring-form': {
+        const editEntry = view.editId ? recurringEntries.find((e) => e.id === view.editId) : undefined;
+        const duplicateFrom = view.duplicateFromId
+          ? recurringEntries.find((e) => e.id === view.duplicateFromId)
+          : undefined;
+        const formBackTarget =
+          editEntry && editEntry.status !== 'ฉบับร่าง'
+            ? { name: 'recurring-detail', id: editEntry.id }
+            : duplicateFrom
+              ? { name: 'recurring-detail', id: duplicateFrom.id }
+              : { name: 'recurring-list' };
+        function saveEntry(entry) {
+          const isEdit = recurringEntries.some((r) => r.id === entry.id);
+          setRecurringEntries((prev) =>
+            isEdit ? prev.map((r) => (r.id === entry.id ? entry : r)) : [entry, ...prev],
+          );
+          persist(() => (isEdit ? recurringApi.update(entry) : recurringApi.create(entry)));
+        }
         return (
-          <GlWriteoffFormPage
-            existing={glWriteoffEntries}
-            onCancel={() => setView({ name: 'gl-writeoff-create' })}
+          <RecurringFormPage
+            existing={recurringEntries}
+            initial={editEntry}
+            duplicateFrom={duplicateFrom}
+            onCancel={() => setView(formBackTarget)}
+            onViewSource={(id) => setView({ name: 'recurring-detail', id })}
             onSave={(entry) => {
-              setGlWriteoffEntries((prev) => [entry, ...prev]);
-              persist(() => glWriteoffApi.create(entry));
+              saveEntry(entry);
             }}
-          />
-        );
-      case 'gl-writeoff-detail': {
-        const entry = glWriteoffEntries.find((e) => e.id === view.id);
-        if (!entry) return null;
-        return (
-          <GlWriteoffDetailPage
-            entry={entry}
-            onBack={() => setView({ name: 'gl-writeoff-create' })}
-            onStatusChange={(updated) => {
-              setGlWriteoffEntries((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
-              persist(() => glWriteoffApi.update(updated));
-            }}
-            onDuplicate={(source) => {
-              const duplicate = {
-                ...source,
-                id: `glw-${Date.now()}`,
-                code: nextGlWriteoffCode(glWriteoffEntries),
-                status: 'ระหว่างดำเนินการ',
-                statusReason: '',
-                installmentsPaid: 0,
-                createdBy: 'สิริศักดิ์ หงษ์พัตรา',
-                createdAt: new Date().toLocaleDateString('en-GB'),
-              };
-              setGlWriteoffEntries((prev) => [duplicate, ...prev]);
-              persist(() => glWriteoffApi.create(duplicate));
-              pushToastRef.current(t('คัดลอกรายการตัดบัญชีสำเร็จ'), 'success');
-              setView({ name: 'gl-writeoff-create' });
+            onSaveDraft={(entry) => {
+              saveEntry(entry);
             }}
           />
         );
       }
-      case 'gl-writeoff-list':
+      case 'recurring-detail': {
+        const entry = recurringEntries.find((e) => e.id === view.id);
+        if (!entry) return null;
+        const backTarget = view.from === 'monthly' ? { name: 'recurring-monthly' } : { name: 'recurring-list' };
+        const backLabel = view.from === 'monthly' ? 'รายการรอดำเนินการ' : 'จัดการรายการบัญชีประจำ';
         return (
-          <GlWriteoffMonthlyPage
-            data={glWriteoffEntries}
-            onView={(id) => setView({ name: 'gl-writeoff-detail', id })}
-            onProcessBatch={(rows) => {
-              const ids = new Set(rows.map((r) => r.id));
-              setGlWriteoffEntries((prev) =>
-                prev.map((r) =>
-                  ids.has(r.id)
-                    ? { ...r, installmentsPaid: Math.min(r.installments, r.installmentsPaid + 1) }
-                    : r,
-                ),
-              );
-              persist(() =>
-                glWriteoffApi.replace(
-                  glWriteoffEntries.map((r) =>
-                    ids.has(r.id) ? { ...r, installmentsPaid: Math.min(r.installments, r.installmentsPaid + 1) } : r,
-                  ),
-                ),
-              );
+          <RecurringDetailPage
+            entry={entry}
+            backLabel={backLabel}
+            onBack={() => setView(backTarget)}
+            onStatusChange={(updated) => {
+              setRecurringEntries((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+              persist(() => recurringApi.update(updated));
+            }}
+            onDuplicate={(source) => setView({ name: 'recurring-form', duplicateFromId: source.id })}
+            onEdit={(source) => setView({ name: 'recurring-form', editId: source.id })}
+            onDelete={(source) => {
+              setRecurringEntries((prev) => prev.filter((r) => r.id !== source.id));
+              persist(() => recurringApi.remove(source.id));
+              pushToastRef.current(t('ลบฉบับร่างสำเร็จ!'), 'success');
+              setView({ name: 'recurring-list' });
             }}
           />
         );
-      case 'purchase-tax-invoice':
+      }
+      case 'recurring-monthly':
         return (
-          <PurchaseTaxInvoicePage
-            data={purchaseTaxInvoices}
-            refDocs={purchaseTaxRefDocs}
-            onChange={(rows) => {
-              setPurchaseTaxInvoices(rows);
-              persist(() => purchaseTaxInvoiceApi.replace(rows));
+          <RecurringMonthlyPage
+            data={recurringEntries}
+            onView={(id) => setView({ name: 'recurring-detail', id, from: 'monthly' })}
+            onProcessBatch={(rows) => {
+              const ids = new Set(rows.map((r) => r.id));
+              const bump = (r) =>
+                ids.has(r.id)
+                  ? { ...r, installmentsPaid: Math.min(r.installments, r.installmentsPaid + 1), failedInstallment: null }
+                  : r;
+              setRecurringEntries((prev) => prev.map(bump));
+              persist(() => recurringApi.replace(recurringEntries.map(bump)));
+            }}
+            onProcessFailure={(rows) => {
+              const ids = new Set(rows.map((r) => r.id));
+              const markFailed = (r) => (ids.has(r.id) ? { ...r, failedInstallment: r.installmentsPaid + 1 } : r);
+              setRecurringEntries((prev) => prev.map(markFailed));
+              persist(() => recurringApi.replace(recurringEntries.map(markFailed)));
             }}
           />
         );
@@ -414,6 +403,15 @@ function AppShellRouter() {
             },
           },
         ]}
+      />
+
+      <Dialog
+        open={errorDialogOpen}
+        variant="error"
+        title={t('ไม่สามารถทำรายการได้')}
+        message={t('ขออภัย เกิดข้อผิดพลาดทางเทคนิค กรุณาลองใหม่อีกครั้งในภายหลัง')}
+        onClose={() => setErrorDialogOpen(false)}
+        actions={[{ label: t('ยอมรับ'), variant: 'primary', onClick: () => setErrorDialogOpen(false) }]}
       />
     </>
   );

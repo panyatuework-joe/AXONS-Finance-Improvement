@@ -19,9 +19,8 @@ import {
 
 const LEDGER_CHILDREN = [
   'reconciliation',
-  'gl-writeoff-create',
-  'gl-writeoff-list',
-  'purchase-tax-invoice',
+  'recurring-list',
+  'recurring-monthly',
   'reports',
   'account-group',
   'report-lines',
@@ -29,7 +28,7 @@ const LEDGER_CHILDREN = [
   'link-report-lines',
   'financial-target',
 ];
-const GL_WRITEOFF_CHILDREN = ['gl-writeoff-create', 'gl-writeoff-list'];
+const RECURRING_CHILDREN = ['recurring-list', 'recurring-monthly'];
 const MANAGE_CHILDREN = [
   'account-group',
   'report-lines',
@@ -41,7 +40,7 @@ const MANAGE_CHILDREN = [
 export default function Layout({ activeKey, onNavigate, onLogoutClick, children }) {
   const { language, setLanguage, company, setCompany, pushToast, t, tv } = useApp();
   const [ledgerExpanded, setLedgerExpanded] = useState(true);
-  const [glWriteoffExpanded, setGlWriteoffExpanded] = useState(true);
+  const [recurringExpanded, setRecurringExpanded] = useState(true);
   const [manageExpanded, setManageExpanded] = useState(true);
   const [companyMenuOpen, setCompanyMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
@@ -51,7 +50,7 @@ export default function Layout({ activeKey, onNavigate, onLogoutClick, children 
   const langMenuRef = useRef(null);
 
   const ledgerActive = LEDGER_CHILDREN.includes(activeKey);
-  const glWriteoffActive = GL_WRITEOFF_CHILDREN.includes(activeKey);
+  const recurringActive = RECURRING_CHILDREN.includes(activeKey);
   const manageActive = MANAGE_CHILDREN.includes(activeKey);
 
   useEffect(() => {
@@ -234,20 +233,20 @@ export default function Layout({ activeKey, onNavigate, onLogoutClick, children 
                     {t('ตรวจสอบบัญชีกระทบยอด')}
                   </span>
                 </div>
-                <div className="ft-submenu-item" onClick={() => setGlWriteoffExpanded((v) => !v)}>
-                  <span className={`ft-submenu-label${glWriteoffActive ? ' ft-submenu-label--active' : ''}`}>
-                    {t('ตัดบัญชี GL')}
+                <div className="ft-submenu-item" onClick={() => setRecurringExpanded((v) => !v)}>
+                  <span className={`ft-submenu-label${recurringActive ? ' ft-submenu-label--active' : ''}`}>
+                    {t('รายการบัญชีประจำ')}
                   </span>
                   <div className="ft-submenu-chevron">
-                    {glWriteoffExpanded ? <ChevronUpIcon color="var(--color-creation-primary-selected)" size={16} /> : <ChevronDownIcon size={16} />}
+                    {recurringExpanded ? <ChevronUpIcon color="var(--color-creation-primary-selected)" size={16} /> : <ChevronDownIcon size={16} />}
                   </div>
                 </div>
 
-                {glWriteoffExpanded && (
+                {recurringExpanded && (
                   <>
                     {[
-                      ['gl-writeoff-create', 'จัดการรายการบัญชีประจำ'],
-                      ['gl-writeoff-list', 'รายการตัดบัญชี'],
+                      ['recurring-list', 'จัดการรายการบัญชีประจำ'],
+                      ['recurring-monthly', 'รายการรอดำเนินการ'],
                     ].map(([key, label]) => (
                       <div
                         key={key}
@@ -265,17 +264,6 @@ export default function Layout({ activeKey, onNavigate, onLogoutClick, children 
                     ))}
                   </>
                 )}
-
-                <div
-                  className={`ft-submenu-item${activeKey === 'purchase-tax-invoice' ? ' ft-submenu-item--active' : ''}`}
-                  onClick={() => handleNavigate('purchase-tax-invoice')}
-                >
-                  <span
-                    className={`ft-submenu-label${activeKey === 'purchase-tax-invoice' ? ' ft-submenu-label--active' : ''}`}
-                  >
-                    {t('บันทึกภาษีซื้อ')}
-                  </span>
-                </div>
 
                 <div
                   className={`ft-submenu-item${activeKey === 'reports' ? ' ft-submenu-item--active' : ''}`}
